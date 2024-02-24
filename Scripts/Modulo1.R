@@ -6,6 +6,10 @@
 ############################
 
 
+#---------------------------------#
+# PRIMERA PARTE: INTRODUCCIÓN A R #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#---------------------------------#
+
 #----------------------#
 # A. Elementos básicos #
 #----------------------#
@@ -97,6 +101,47 @@ my_function = function(n){
 }
 
 my_function(10)
+
+
+#--------------#
+# Ejercicios   #
+#--------------#
+# 1. Crear tres vectores (una cadena y dos numéricos),
+# crear una matriz y convertir en data frame. Seleccione el elemento
+# en la segunda fila y la tercera columna.
+
+# Solución:
+x <- c("a", "b", "c", "d", "e")
+y <- c(1:5)
+z <- c(10:14)
+
+matrix1 <- matrix(c(x,y,z), ncol = 3, nrow = 5)
+df1 <- data.frame(matrix1)
+df1[2,3]
+
+# 2. Crear una función que identifique si el vector es numérico; y, si
+# es así, calcule la media, mediana, percentil 25 y 75 (use una lista).
+
+# Solución:
+f <- function(v){
+  if (is.numeric(v)) {
+    mean <- mean(v)
+    median <- median(v)
+    q1 <- quantile(v, 0.25)
+    q3 <- quantile(v, 0.75)
+    y <- list(mean = mean, 
+              median = median, 
+              Q1 = q1, 
+              Q3 = q3)
+    return(y)
+  } else {
+    "El vector no es numérico"
+  }
+}
+
+#-----------------------------------------#
+# SEGUNDA PARTE: INTRODUCCIÓN A TIDYVERSE #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------#
 
 #--------------------#
 # Nota: Librerías    #
@@ -234,6 +279,30 @@ ggplot2::ggplot(new_dataset, aes(x = termGPA,
     y = "Cumulative GPA prior to term"
     
   ) + scale_color_discrete(name = "Attend intervals")
+
+
+#---------------------------------#
+# Ejercicios: funciones Tidyverse #
+#---------------------------------#
+
+# 1. Filtrar la base de datos de ocupados para los siguientes grupos:
+# Hombres de entre 14 - 25 años en la ciudad de Bogotá.
+# Mostrar el gráfico de barras según rango de ingresos
+
+
+
+
+# 2. Filtrar la base de datos de ocupados para los siguientes grupos:
+# Mujeres con ingresos de entre 2.000.000 y 5.000.000 de pesos
+# Gráfico de barras sobre el nivel de educación asociado
+
+
+
+
+
+#-----------------------------------------------------------------------#
+# Anexo*: funciones útiles para el tratamiento de variables categóricas #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------#
 
 #--------------------------------------------------------------#
 # F. Funciones: forcats (tratamiento de variables categóricas) #
