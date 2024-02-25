@@ -1,0 +1,336 @@
+---
+title: "Módulo 1: Básicos de R"
+format: revealjs
+editor: visual
+fontsize: 16pt
+---
+
+## R y RStudio
+
+Quarto enables you to weave together content and executable code into a finished presentation. To learn more about Quarto presentations see <https://quarto.org/docs/presentations/>.
+
+## Consola
+
+When you click the **Render** button a document will be generated that includes:
+
+-   Content authored with markdown
+-   Output from executable code
+
+## Estructuras de datos
+
+Durante las próximas sesiones, nos concéntraremos en cuatro estructuras de datos: **vectores**, **matrices**, **data frames** y **listas**.
+
+Las líneas de comando son sensibles antes las mayúsculas. Los objetos permiten operaciones:
+
+```{r, echo=TRUE}
+x <- 1:6
+x
+```
+
+Las líneas de comando son sensibles antes las mayúsculas. Los objetos permiten operaciones:
+
+```{r, echo=TRUE}
+A1 <- 1
+a1 <- 0
+A1 + 1
+```
+
+En el caso de los **vectores**, R emplea **ejecución por elementos**. Es decir,
+
+::: columns
+::: {.column width="50%"}
+```{r, echo=TRUE}
+a <- 1:6
+a*a
+```
+
+![Operación (1,2,3,4,5,6)\*(1,2,3,4,5,6)](Img1.png){width="250px"}
+:::
+
+::: {.column width="50%"}
+```{r, echo=TRUE}
+b <- 1:2
+a*b
+```
+
+![Operación (1,2,3,4,5,6)\*(1,2)](Img2.png){width="250px"}
+:::
+:::
+
+## Clases de objeto
+
+::: columns
+::: {.column width="50%"}
+### Vectores
+
+```{r, echo=TRUE}
+text <- c("x", "y", "z")
+text
+```
+
+```{r, echo=TRUE}
+text[1]
+```
+
+```{r, echo=TRUE}
+z = c(1,2,3,4,5,6)
+z = 1:6
+z
+```
+
+```{r, echo=TRUE}
+length(z)
+```
+
+```{r, echo=TRUE}
+names(z) = c("uno", "dos", "tres", "cuatro", "cinco", "seis")
+z
+```
+
+### Factores
+
+```{r, echo=TRUE}
+gender = factor(c("male","female", "female", "female"))
+gender
+```
+
+```{r, echo=TRUE}
+gender.recod = factor(gender, levels = c("male","female"), labels = c("M", "F"))
+gender.recod
+```
+:::
+
+::: {.column width="50%"}
+### Matrices
+
+```{r, echo=TRUE}
+m1 <- matrix(1:9, nrow = 3, ncol = 3, byrow = F)
+m1
+```
+
+```{r, echo=TRUE}
+m2 <- matrix(1:9, nrow = 3, ncol = 3, byrow = F)
+m2
+```
+
+```{r, echo=TRUE}
+m2[2,1]
+```
+
+```{r, echo=TRUE}
+m2[2,]
+```
+
+```{r, echo=TRUE}
+m2[,1]
+```
+
+```{r, echo=TRUE}
+m1 %*% m2
+```
+:::
+:::
+
+## Listas
+
+::: columns
+::: {.column width="50%"}
+### Creación
+
+```{r, echo=TRUE}
+v1 = c(1, 2, 3, 4)
+v2 = c("a", "b", "c", "d", "e")
+m1 = matrix(v1, 
+            nrow = 2, ncol = 2, byrow = T)
+
+lista <- list(vector1 = v1, vector2 = v2, matriz1 = m1)
+lista
+```
+
+### Sintaxis
+
+```{r, echo=TRUE}
+lista$vector2
+```
+
+```{r, echo=TRUE}
+lista[[2]]
+```
+
+```{r, echo=TRUE}
+lista[[2]][1]
+```
+:::
+
+::: {.column width="50%"}
+$~$ $~$
+
+![Sintaxis: listas](Img3.png){width="450px"}
+:::
+:::
+
+## Data frames
+
+::: columns
+::: {.column width="50%"}
+### Creación
+
+```{r, echo=TRUE}
+nombre = c("x1" ,"x2", "x3", "x4")
+sexo = factor(c("male", "male", "female", "female"))
+edad = c(15, 26, 43, 56)
+
+df = data.frame(nombre, sexo, edad)
+df
+```
+
+### Sintaxis
+
+```{r, echo=TRUE}
+df[1,2]
+```
+
+```{r, echo=TRUE}
+df[1,c(1,2)]
+```
+
+```{r, echo=TRUE}
+df[1,]
+```
+
+```{r, echo=TRUE}
+df[,1]
+```
+
+```{r, echo=TRUE}
+df$edad
+```
+
+```{r, echo=TRUE}
+df$edad[1]
+```
+
+```{r, echo=TRUE}
+df[-c(1,2),]
+```
+
+```{r, echo=TRUE}
+df[,-c(1)]
+```
+
+```{r, echo=TRUE}
+df[c("sexo", "edad")]
+```
+
+:::
+
+::: {.column width="50%"}
+![](Img4.png){width="250px"}
+
+
+:::
+:::
+
+## Condicionales y funciones
+
+::: columns
+::: {.column width="50%"}
+### Condicional
+
+```{r, eval=FALSE, echo=TRUE}
+if (condition) {
+  # Ejecutado cuando la condición es verdadera
+} else {
+  # Ejecutado cuando la condición es falsa
+}
+```
+
+```{r, eval=TRUE, echo=TRUE}
+vec1 = c(1,2,3,4,5)
+n = 5.2
+
+if (n > 5) {
+  vec1 = c(vec1, n)
+} else {
+  vec1 = vec1
+}
+
+vec1
+```
+
+```{r, eval=TRUE, echo=TRUE}
+n = 4.25
+
+if (n > 5) {vec1 = c(vec1, n)} else {vec1 = vec1}
+
+vec1
+```
+
+```{r, eval=TRUE, echo=FALSE}
+library(kableExtra)
+library(dplyr)
+boolean = data.frame(Operador = c("x > y", "x >= y",
+                                  "x == y", "!x", "x != y", "x|y", "x & y", "x %in% y"),
+                     Descripción = c("Greater than",
+                                     "Greater than or equal to",
+                                     "Exactly equal to", "Not",
+                                     "Not equal to", 
+                                     "OR", "AND", "In the set"))
+Form.Basic = c("striped", "bordered", "hover",
+               "condensed", "responsive")
+kableExtra::kable(boolean) %>% kable_styling(bootstrap_options = Form.Basic, font_size = 12) %>% add_header_above()
+```
+:::
+
+::: {.column width="50%"}
+### Estructura de una función
+
+```{r, eval = FALSE, echo=TRUE}
+ function(arg_1 = x1, arg_2 = x2, ..., arg_n = xn)
+```
+
+### Ejemplo: función seq()
+
+
+
+### Escribir una función
+
+
+:::
+:::
+
+## Librerías
+
+```{r, echo=TRUE, eval = TRUE, error=TRUE}
+ggplot
+```
+
+```{r, eval = FALSE, echo = TRUE}
+install.packages("ggplot2")
+```
+
+```{r, eval = TRUE, echo = TRUE}
+library(ggplot2)
+```
+
+```{r, eval = TRUE, echo = TRUE}
+ggplot(data=diamonds, aes(x=price, group=cut, fill=cut)) +
+    geom_density(adjust=1.5, alpha=.4) 
+```
+
+### Instalar librerías
+
+```{r, eval = FALSE, echo = TRUE}
+install.packages("psych")
+install.packages("tidyverse")
+install.packages("rafalib")
+```
+
+### Anotación
+
+```{r, eval = FALSE, echo = TRUE}
+count(x)
+dplyr::count(x)
+```
+
+## Tidyverse
