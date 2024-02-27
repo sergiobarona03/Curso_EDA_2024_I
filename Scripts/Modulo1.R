@@ -80,28 +80,39 @@ df[c("sexo", "edad")] # seleccionar variables "sexo" y "edad"
 #------------------------------#
 
 # Definición del condicional
-vec1 = c(1,2,3,4,5)
-n = 5.2
-n = 4.25
+x <- 10
+if (x > 5) {
+  print("x es mayor que 5")
+}
 
-if (n > 5) {
-  vec1 = c(vec1, n)
+x <- 2
+if (x > 5) {
+  print("x es mayor que 5")
 } else {
-  vec1 = vec1
-}
-vec1
-
-# Definición de una función a partir del condicional
-vec1 = 1:5
-my_function = function(n){
-  if (n > 5) {
-    vec1 = c(vec1, n)
-  } else {vec1 = vec1}
-  return(vec1)
+  print("x es menor o igual que 5")
 }
 
-my_function(10)
+# Definición de una función 
+f_z = function(x){
+  z <- (x - mean(x))/sd(x)
+  return(z)
+}
 
+x <- 1:20
+z <- f_z(x)
+mean(z)
+sd(z)
+
+# Definición de la función a partir de un condicional
+par_impar <- function(x){
+  if(x %% 2 == 0){
+    return("El número es par")
+  } else {
+    return("El número es impar")
+  }
+}
+
+par_impar(3)
 
 #--------------#
 # Ejercicios   #

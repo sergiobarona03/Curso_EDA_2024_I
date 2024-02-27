@@ -1,0 +1,10 @@
+
+# El paquete 'swirl' proporciona un tutorial directamente en la consola de R
+# sobre los elementos básicos de R, así como elementos para el análisis de datos
+# Para instalar y ejecutar el paquete 'swirl', use el siguiente código:
+
+install.packages("swirl")
+library(swirl)
+swirl()
+
+# Para avanzar en el tutorial, siga los pasos indicados en la consola.
