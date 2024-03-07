@@ -6,6 +6,9 @@
 ###############################################
 library(readxl)
 library(tidyverse)
+library(ggpubr)
+library(gt)
+library(treemapify)
 
 #----------------------#
 # Cargar base de datos #-------------------------------------------------------------------------------------------------------------------------
@@ -17,22 +20,13 @@ dataset <- readxl::read_excel("Input/attend.xlsx")
 # Análisis exploratorio de datos #-------------------------------------------------------------------------------------------------------------------------
 #--------------------------------#
 
-# El EDA es un proceso cuyo objetivo es desarrollar un entendimiento más amplia sobre las estructuras de datos
-# En general, el EDA es un proceso de transformación, visualización de datos y modelación
-# Las dos preguntas generales que orientan el proceso del EDA son las siguientes:
-# 1. ¿Cuál es el patrón de valores en una variable? (variación)
-# 2. ¿Cómo cambian conjuntamente los valores de dos o más variables? (covariación)
-
-#-----------#
-# Variación #-------------------------------------------------------------------------------------------------------------------------
-#-----------#
-
-# Por variación, entendemos el interés por estudiar el comportamiento de los valores de una variable
-# (Análisis univariado)
-
 #-----------------------#
-# Variables categóricas #
+# Variables categóricas #-------------------------------------------------------------------------------------------------------------------------
 #-----------------------#
+
+#-------------------------------------------#
+# Variables categóricas: diagrama de barras #
+#-------------------------------------------#
 # Para examinar la distribución de una variable categórica, nos interesa su frecuencia
 new_dataset <- dataset %>% mutate(Int_attend = cut(attend,
                                                    breaks = seq(0,50, by = 10),
@@ -43,12 +37,92 @@ new_dataset <- dataset %>% mutate(Int_attend = cut(attend,
                                                               "Group 4",
                                                               "Group 5"))) # Asignar etiquetas
 
-ggplot(data = new_dataset) +
+# Definir variables categóricas
+new_dataset$Int_attend = as.factor(new_dataset$Int_attend)
+new_dataset$soph = as.factor(new_dataset$soph)
+new_dataset$frosh = as.factor(new_dataset$frosh)
+
+# Graficar proporción y conteo
+count.plot = ggplot(data = new_dataset) +
   geom_bar(mapping = aes(x = Int_attend), 
-           color = "white", fill = "lightskyblue") + theme_bw()
+           color = "white", fill = "lightskyblue") + 
+  labs(title = "Intervalos para los puntajes de la prueba",
+       x = "Puntajes", y = "Conteo (n)") + theme_bw()
+
+share.plot = ggplot(data = new_dataset) +
+  geom_bar(mapping = aes(x = Int_attend,
+                         y =after_stat(count / sum(count))), 
+           color = "white", fill = "coral") + 
+  labs(title = "Intervalos para los puntajes de la prueba",
+       x = "Puntajes", y = "Proporción (%)") +  scale_y_continuous(labels = scales::percent) +
+  theme_bw()
+
+ggarrange(count.plot, share.plot, ncol = 2, nrow = 1)
 
 # La misma información se puede obtener con la función dplyr::count()
-new_dataset %>% dplyr::count(Int_attend)
+count_attend = new_dataset %>% count(Int_attend) %>%
+  mutate(perc = prop.table(n)*100)
+
+# Un resumen de las variables categóricas se puede obtener así
+count_prop = new_dataset %>% select(c("Int_attend", 
+                                      "soph", "frosh")) %>%
+  mutate(across(.fns = as.character)) %>%
+  tidyr::pivot_longer(cols = everything()) %>%
+  count(name, value, name = 'N') %>%
+  group_by(name) %>%
+  mutate(N = N,
+         Share = prop.table(N) * 100)
+
+
+# Mejorar la presentación de los resultados
+descriptive_summary = gt(as.data.frame(count_prop[c("value", "N", "Share")]))
+
+gt_tbl <- 
+  descriptive_summary |> 
+  tab_row_group(
+    label = "Int_attend",
+    rows = 1:4
+  ) |>
+  tab_row_group(
+    label = "Frosh",
+    rows = 5:6
+  ) |>
+  tab_row_group(
+    label = "Soph",
+    rows = 7:8
+  )
+
+
+#-----------------------------------------------#
+# Variables categóricas: creamos otros gráficos #
+#-----------------------------------------------#
+
+# Pie chart
+ggplot(count_attend, aes(x="", y=n, fill=Int_attend)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) + theme_void() +
+  geom_label(aes(label = n),
+             position = position_stack(vjust = 0.5),
+             show.legend = FALSE) 
+  
+
+# Donut chart
+h_size = 5
+ggplot(count_attend, aes(x = h_size, y = n, fill = Int_attend)) +
+  geom_col() +
+  coord_polar(theta = "y") +
+  xlim(c(0.2, h_size + 0.5)) + theme_void()+
+  geom_label(aes(label = n),
+             position = position_stack(vjust = 0.5),
+             show.legend = FALSE) 
+
+# Treemap
+ggplot(count_attend, aes(area = n,
+                         fill = n, label = Int_attend)) +
+  geom_treemap() +
+  geom_treemap_text(colour = "white",
+                    place = "centre",
+                    size = 15) + scale_fill_viridis_c()
 
 #-----------------------#
 # Variables continuas   #
