@@ -13,8 +13,8 @@ library(treemapify)
 #----------------------#
 # Cargar base de datos #-------------------------------------------------------------------------------------------------------------------------
 #----------------------#
-setwd("C:/Users/PC/Desktop/Nuevo_Curso_2024I")
-dataset <- readxl::read_excel("Input/attend.xlsx")
+setwd("C:/Users/Portatil/Desktop/Curso_EDA_2024_I")
+dataset <- readxl::read_excel("Datos/attend.xlsx")
 
 #--------------------------------#
 # Análisis exploratorio de datos #-------------------------------------------------------------------------------------------------------------------------
@@ -92,6 +92,7 @@ gt_tbl <-
     rows = 7:8
   )
 
+gt_tbl
 
 #-----------------------------------------------#
 # Variables categóricas: creamos otros gráficos #
@@ -124,17 +125,20 @@ ggplot(count_attend, aes(area = n,
                     place = "centre",
                     size = 15) + scale_fill_viridis_c()
 
-#-----------------------#
-# Variables continuas   #
-#-----------------------#
-
+#--------------------------------------------------#
+# Variables continuas: histogramas y frecuencias   #
+#--------------------------------------------------#
 # Para examinar una variable continua, usamos histogramas
 ggplot(data = new_dataset) +
-  geom_histogram(mapping = aes(x = attend),
-                 binwidth = 0.8)
+  geom_histogram(mapping = aes(x = attend, col = attend),
+                 fill = "lightskyblue", col = "black",
+                 binwidth = 2) + theme_bw()
 
 # Manualmente, los datos del histograma se calculan con cut_width
-new_dataset %>% count(cut_width(attend, 0.8))
+count = new_dataset %>% count(cut_width(attend, 0.8),
+                              name = "n") %>% arrange(desc(n))
+colnames(count) = c("Interval", "n")
+count = gt(count)
 
 # Si el interés es graficar múltiples histogramas de acuerdo con 
 # una variable categórica, deberíamos usar geom_freqpoly()
@@ -165,6 +169,27 @@ ggplot(data = new_dataset, aes(x = attend, colour = soph)) +
        )
 
 
+
+#---------------------------------------------------------------#
+# Funciones de densidad y funciones de distribución acumulada   #
+#---------------------------------------------------------------#
+
+
+
+#---------------------#
+# Diagramas de caja   #
+#---------------------#
+
+
+
+#-------------------------#
+# Normalidad univariada   #
+#-------------------------#
+
+
+#--------------------#
+# Valores atípicos   #
+#--------------------#
 # Detección de valores atípicos (outliers)
 # Los valores atípicos pueden, o bien ser errores en el ingreso de la información, o bien
 # puede proporcionar información útil
@@ -200,7 +225,9 @@ outliers <- new_dataset %>% filter(attend<(Q1 - 1.5*IQR) | attend>(Q3 + 1.5*IQR)
 outliers$attend
 boxplot.stats(new_dataset$attend)$out
 
+# Resumen completo para una variable continua
 
+# Verificamos nuevamente la normalidad
 
 ##########################################
 ##########################################
