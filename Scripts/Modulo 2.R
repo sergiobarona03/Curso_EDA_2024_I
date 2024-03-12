@@ -139,6 +139,7 @@ count = new_dataset %>% count(cut_width(attend, 0.8),
                               name = "n") %>% arrange(desc(n))
 colnames(count) = c("Interval", "n")
 count = gt(count)
+count
 
 # Si el interés es graficar múltiples histogramas de acuerdo con 
 # una variable categórica, deberíamos usar geom_freqpoly()
@@ -174,17 +175,315 @@ ggplot(data = new_dataset, aes(x = attend, colour = soph)) +
 # Funciones de densidad y funciones de distribución acumulada   #
 #---------------------------------------------------------------#
 
+# La función de densidad representa la distribución de la variable numérica
+# Es una versión suavizada del histograma.
+ggplot(data = new_dataset,
+       aes(x = attend)) + geom_density()
+
+# Ajustar parámetros
+ggplot(data = new_dataset, aes(x = attend)) + 
+  geom_density(color = "black",
+               alpha = 0.2, fill = "gray45") +
+  theme_bw() + labs(x = "Attend", y = "Density",
+                    title = "Distribución de los puntajes del examen")
+
+# La función empírica de distribución acumulativa (ECDF) muestra
+# una forma alternativa de representar la distribución
+ggplot(data = new_dataset,
+       aes(x = attend)) + stat_ecdf(geom = "step")
+
+# Ajustar parámetros
+ggplot(data = new_dataset,
+       aes(x = attend)) + stat_ecdf(geom = "step",
+                                    color = "gray45") +
+  theme_bw() + labs(x = "Attend", y = "ECDF",
+                    title = "Attend ECDF")
 
 
 #---------------------#
 # Diagramas de caja   #
 #---------------------#
 
+############ esto es sólo para construir la figura #############################
+# Vertical box plot by group
+x1 = ggplot(new_dataset, aes(x = "", y = attend)) + 
+  geom_boxplot(outliers = F, col = "white",
+               fill = "white") +
+  geom_jitter(alpha = 0.3, size = 1,
+              col = "black") + ylim(c(0,35)) + theme_classic() 
 
+# Density function (q1, q2, q3)
+library(ggridges)
+x2 = ggplot(new_dataset, aes(x = attend, y = 1)) +
+  geom_density_ridges(jittered_points = TRUE, col = "black", alpha = 0.3,
+                      fill = "white") +
+  coord_flip() + theme_classic() +
+  geom_vline(xintercept = quantile(new_dataset$attend, 0.25),
+             col = "black") +
+  geom_vline(xintercept = quantile(new_dataset$attend, 0.5),
+             col = "black") +
+  geom_vline(xintercept = quantile(new_dataset$attend, 0.75),
+             col = "black") + xlim(c(0,35))
+
+# Box plot
+x3 = ggplot(new_dataset, aes(x = "", y = attend)) + 
+  stat_boxplot(geom ='errorbar', col = "black")+
+  geom_boxplot(outliers = T, col = "black",
+               fill = "white") + theme_classic() + ylim(c(0,35))
+
+ggarrange(x1,x2,x3, ncol = 3, nrow = 1)
+############ Fin del paréntesis Fin del paréntesis #############################
+
+# Crear boxplot
+ggplot(new_dataset, aes(x = "", y = attend)) +
+  geom_boxplot()
+
+# Ajustar parámetros
+ggplot(new_dataset, aes(x = "", y = attend)) + 
+  stat_boxplot(geom ='errorbar', col = "black")+
+  geom_boxplot(outliers = T, col = "black",
+               fill = "white") + theme_classic() + ylim(c(0,35)) + coord_flip()
+
+
+# Se pueden mostrar diferenciados según grupos
+ggplot(new_dataset, aes(x = soph, y = attend, fill = soph)) + 
+  stat_boxplot(geom ='errorbar', col = "black")+
+  geom_boxplot(outliers = T, col = "black") + theme_classic() + 
+  ylim(c(0,35))
+
+
+#-----------------------------------------------------#
+# Resumen general: histograma, boxplot y scatter plot #
+#-----------------------------------------------------#
+library(StatDA)
+me = mean(new_dataset$attend)
+sd = sd(new_dataset$attend)
+
+par(mfrow = c(1,1))
+StatDA::edaplot(new_dataset$attend, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(0,32, by = 1),
+                H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,
+                D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(0, 32), P.cex.lab =1.2,
+                P.log=FALSE, P.main="Histogram, Density Plot, Scatterplot,
+	and Boxplot of Rate",
+                P.xlab="In", P.plot=TRUE,
+                P.ylab="Density",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(new_dataset$attend), lwd=2, col='blue')
+curve(dnorm(x, mean=me, sd=sd), from=0, to=32, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(new_dataset$attend),4)),
+             paste0("Max. = ", round(max(new_dataset$attend),4)),
+             paste0("Mean = ", round(mean(new_dataset$attend),4)),
+             paste0("Median = ", round(median(new_dataset$attend),4)),
+             paste0("Std. dev. = ", round(sd(new_dataset$attend),4)),
+             paste0("Kurtosis = ", round(kurtosis(new_dataset$attend),4)),
+             paste0("Skewness = ", round(skewness(new_dataset$attend),4)))
+legend (x=0, y=0.08, bty="n", leg.txt)
+
+
+#--------------------------------#
+# Resumen: variables continuas   #
+#--------------------------------#
+
+# Resumen descriptivo total
+q1 <- new_dataset %>% dplyr::select(attend,
+                                     priGPA, termGPA,
+                                    ACT, final,
+                                    atndrte,
+                                    hwrte, stndfnl) %>% 
+  summarise(across(everything(),
+                   ~ quantile(.x, na.rm = T, 0.25))) %>% t() 
+q2 <- new_dataset %>% dplyr::select(attend,
+                                    priGPA, termGPA,
+                                    ACT, final,
+                                    atndrte,
+                                    hwrte, stndfnl) %>%  
+  summarise(across(everything(), ~ median(.x, na.rm = TRUE))) %>% t()
+
+q3 <- new_dataset %>% dplyr::select(attend,
+                                    priGPA, termGPA,
+                                    ACT, final,
+                                    atndrte,
+                                    hwrte, stndfnl) %>%  
+  summarise(across(everything(), ~ quantile(.x, na.rm = T, 0.75))) %>% t()
+
+total <- data.frame(Variable = rownames(q1),
+                    Total = paste0(round(q2, 2), " (",
+                                   round(q1, 2), " - ",
+                                   round(q3, 2), ")"))
+
+# Resumen descriptivo por grupos
+q1_group <- new_dataset %>%
+  group_by(soph) %>%
+  summarise(across(c("attend",
+                     "priGPA", "termGPA",
+                     "ACT", "final",
+                     "atndrte",
+                     "hwrte", "stndfnl"),
+                   ~ quantile(.x, na.rm = T, 0.25))) %>% t() 
+
+q2_group <- new_dataset %>%
+  group_by(soph) %>%
+  summarise(across(c("attend",
+                     "priGPA", "termGPA",
+                     "ACT", "final",
+                     "atndrte",
+                     "hwrte", "stndfnl"),
+                   ~ median(.x, na.rm = TRUE))) %>% t() 
+
+q3_group <- new_dataset %>%
+  group_by(soph) %>%
+  summarise(across(c("attend",
+                     "priGPA", "termGPA",
+                     "ACT", "final",
+                     "atndrte",
+                     "hwrte", "stndfnl"),
+                   ~ quantile(.x, na.rm = T, 0.75))) %>% t() 
+
+group <- data.frame(soph_0 = paste0(round(as.numeric(q2_group[-1,1]), 1), " (",
+                                    round(as.numeric(q1_group[-1,1]), 2), " - ",
+                                    round(as.numeric(q3_group[-1,1]), 2), ")"),
+                    soph_1 = paste0(round(as.numeric(q2_group[-1,2]), 1), " (",
+                                    round(as.numeric(q1_group[-1,2]), 2), " - ",
+                                    round(as.numeric(q3_group[-1,2]), 2), ")"))
+
+summary <- cbind(total,group) %>% gt()
+summary
+
+# Ejercicio: hacer lo mismo para la media y la desviación estándar
+mean <- new_dataset %>% dplyr::select(attend,
+                                      priGPA, termGPA) %>% 
+  summarise(across(everything(),
+                   ~ mean(.x, na.rm = TRUE))) %>% t() 
+sd <- new_dataset %>% dplyr::select(attend,
+                                    priGPA, termGPA) %>%  
+  summarise(across(everything(), ~ sd(.x, na.rm = TRUE))) %>% t()
+
+total <- data.frame(Variable = rownames(mean),
+                    Total = paste0(round(mean, 2), " (",
+                                   round(sd, 2), ")"))
+
+# Resumen descriptivo por grupos
+mean_group <- new_dataset %>%
+  group_by(soph) %>%
+  summarise(across(c("attend", "priGPA", "termGPA"),
+                   ~ mean(.x, na.rm = TRUE))) %>% t() 
+sd_group <- new_dataset %>%
+  group_by(soph) %>%
+  summarise(across(c("attend", "priGPA", "termGPA"),
+                   ~ sd(.x, na.rm = TRUE))) %>% t() 
+
+group <- data.frame(soph_0 = paste0(round(as.numeric(mean_group[-1,1]),1), " (",
+                                    round(as.numeric(sd_group[-1,1]),1),")"),
+                    soph_1 = paste0(round(as.numeric(mean_group[-1,2]),1)," (",
+                                    round(as.numeric(sd_group[-1,2]),1), ")"))
+
+summary <- cbind(total,group) %>% gt()
+summary
 
 #-------------------------#
 # Normalidad univariada   #
 #-------------------------#
+
+# Analizar la normalidad para una variable
+library(car)
+qqPlot(new_dataset$termGPA, ylab = "Term GPA")
+
+# Analizar la normalidad de las variables continuas
+library(nortest) # Anderson-Darling, Kolmogorov-Smirnov (Lilliefors)
+
+
+
+############################## Paréntesis: esto es únicamente para la presentación ######################################
+nortest_function <- function(x, y){
+  if (is.function(y)) {
+    return(y(x)$p.value)
+  } else {return("Y no es una función")}
+}
+
+
+ad <- new_dataset %>% dplyr::select(attend,
+                                      priGPA, termGPA,
+                                      ACT, final,
+                                      atndrte,
+                                      hwrte, stndfnl) %>% 
+  summarise(across(c("attend",
+                     "priGPA", "termGPA",
+                     "ACT", "final",
+                     "atndrte",
+                     "hwrte", "stndfnl"),
+                   ~ nortest_function(.x, ad.test))) %>% t() 
+li <- new_dataset %>% dplyr::select(attend,
+                                    priGPA, termGPA,
+                                    ACT, final,
+                                    atndrte,
+                                    hwrte, stndfnl) %>% 
+  summarise(across(c("attend",
+                     "priGPA", "termGPA",
+                     "ACT", "final",
+                     "atndrte",
+                     "hwrte", "stndfnl"),
+                   ~ nortest_function(.x, lillie.test))) %>% t()  
+
+pearson <- new_dataset %>% dplyr::select(attend,
+                                    priGPA, termGPA,
+                                    ACT, final,
+                                    atndrte,
+                                    hwrte, stndfnl) %>% 
+  summarise(across(c("attend",
+                     "priGPA", "termGPA",
+                     "ACT", "final",
+                     "atndrte",
+                     "hwrte", "stndfnl"),
+                   ~ nortest_function(.x, pearson.test))) %>% t() 
+
+sf <- new_dataset %>% dplyr::select(attend,
+                                    priGPA, termGPA,
+                                    ACT, final,
+                                    atndrte,
+                                    hwrte, stndfnl) %>% 
+  summarise(across(c("attend",
+                     "priGPA", "termGPA",
+                     "ACT", "final",
+                     "atndrte",
+                     "hwrte", "stndfnl"),
+                   ~ nortest_function(.x, sf.test))) %>% t() 
+
+sw <- new_dataset %>% dplyr::select(attend,
+                                    priGPA, termGPA,
+                                    ACT, final,
+                                    atndrte,
+                                    hwrte, stndfnl) %>% 
+  summarise(across(c("attend",
+                     "priGPA", "termGPA",
+                     "ACT", "final",
+                     "atndrte",
+                     "hwrte", "stndfnl"),
+                   ~ nortest_function(.x, shapiro.test))) %>% t() 
+
+df_summary <- data.frame(variable = rownames(ad),
+                         ad_test = round(ad, 4),
+                         li_test = round(li,4),
+                         pearson_test = round(pearson, 4),
+                         sw_test = round(sw, 4),
+                         sf_test = round(sf, 4))
+
+gt(df_summary)
+
+######################################### Fin del paréntesis #########################################
+
+
+ad.test(new_dataset$attend)      
+lillie.test(new_dataset$attend)   
+pearson.test(new_dataset$attend)  
+sf.test(new_dataset$attend)       
+shapiro.test(new_dataset$attend) 
+
+
+# Examinar el efecto de las transformaciones
 
 
 #--------------------#
