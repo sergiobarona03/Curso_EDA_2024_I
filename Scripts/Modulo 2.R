@@ -9,11 +9,12 @@ library(tidyverse)
 library(ggpubr)
 library(gt)
 library(treemapify)
+library(moments)
 
 #----------------------#
 # Cargar base de datos #-------------------------------------------------------------------------------------------------------------------------
 #----------------------#
-setwd("C:/Users/Portatil/Desktop/Curso_EDA_2024_I")
+setwd("C:/Users/PC/Desktop/Curso_EDA_2024_I")
 dataset <- readxl::read_excel("Datos/attend.xlsx")
 
 #--------------------------------#
@@ -484,10 +485,24 @@ shapiro.test(new_dataset$attend)
 
 
 # Examinar el efecto de las transformaciones
+# Consideremos tres transformaciones: log, sqr y cuberoot
+windows()
+par(mfrow = c(2,2))
+qqPlot(new_dataset$priGPA, ylab = "pri GPA", main  = "Base")
+qqPlot(log(new_dataset$priGPA), ylab = "pri GPA", main = "Log transformation ")
+qqPlot((new_dataset$priGPA)^(1/2), ylab = "pri GPA", main = "Square root transformation")
+qqPlot((new_dataset$priGPA)^(1/3), ylab = "pri GPA", main = "Cubic root transformation")
 
+# Examinemos el cambio en las distribuciones
+windows()
+par(mfrow = c(4,1))
+boxplot(new_dataset$priGPA, horizontal=TRUE)
+boxplot(log(new_dataset$priGPA), horizontal=TRUE)
+boxplot(new_dataset$priGPA^(1/2), horizontal=TRUE)
+boxplot(new_dataset$priGPA^(1/3), horizontal=TRUE)
 
 #--------------------#
-# Valores atípicos   #
+# Valores atípicos   #------------------------------------------------------------------------------------------------------------------------------------------------------
 #--------------------#
 # Detección de valores atípicos (outliers)
 # Los valores atípicos pueden, o bien ser errores en el ingreso de la información, o bien
@@ -495,47 +510,209 @@ shapiro.test(new_dataset$attend)
 
 # Un histograma puede dar algunas luces
 ggplot(data = new_dataset) +
-  geom_histogram(mapping = aes(attend),
-                 binwidth = 0.8)
-
-# El eje x sugiere la existencia de valores atípicos, pero
-# podemos fijarnos en las coordenadas específicas
-ggplot(data = new_dataset) +
-  geom_histogram(mapping = aes(attend),
-                 binwidth = 0.8) + coord_cartesian(ylim = c(0,5))
+  geom_histogram(mapping = aes(x = priGPA, col = priGPA),
+                 fill = "lightskyblue", col = "black",
+                 binwidth = .2) + theme_bw()
 
 # El diagrama de caja sirve para identificar outliers
-ggplot(data = new_dataset, aes(y = attend)) +
-  geom_boxplot(fill = "cyan") + theme_bw()
+boxplot(new_dataset$priGPA, horizontal = T)
 
 # Criterio IQR para la detección de outliers
 # Cualquier observación fuera de [q0.25 - 1.5IQR, q0.75 + 1.5IQR]
 # La siguiente función permite la detección de outliers
-boxplot.stats(new_dataset$attend)$out
+boxplot.stats(new_dataset$priGPA)$out
 
 # Lo mismo puede ser obtenido manualmente
-Q1 <- quantile(new_dataset$attend, .25)
-Q3 <- quantile(new_dataset$attend, .75)
-IQR <- IQR(new_dataset$attend)
+Q1 <- quantile(new_dataset$priGPA, .25)
+Q3 <- quantile(new_dataset$priGPA, .75)
+IQR <- IQR(new_dataset$priGPA)
 
-outliers <- new_dataset %>% filter(attend<(Q1 - 1.5*IQR) | attend>(Q3 + 1.5*IQR))
+outliers <- new_dataset %>% filter(priGPA<(Q1 - 1.5*IQR) | priGPA>(Q3 + 1.5*IQR))
 
 # Comparación
-outliers$attend
-boxplot.stats(new_dataset$attend)$out
+outliers$priGPA
+boxplot.stats(new_dataset$priGPA)$out
 
-# Resumen completo para una variable continua
-
-# Verificamos nuevamente la normalidad
-
-##########################################
-##########################################
-## Nota pendiente: pruebas estadísticas ##
-##########################################
-##########################################
+# Identificación de los outliers en la gráfica
+plot(new_dataset$priGPA, type='p',
+     col=ifelse(new_dataset$priGPA==outliers$priGPA, "red", "black"),
+     pch = ifelse(new_dataset$priGPA==outliers$priGPA, 17, 16))
 
 
+# El problema de la identificación de valores atípicos es la definición de umbrales
+# Véase el criterio de Hair et al. (1999), por ejemplo:
+
+# Estandarizar la variable
+z <- data.frame(id = seq(1, nrow(new_dataset), by = 1),
+                x = new_dataset$priGPA,
+                z = scale(new_dataset$priGPA))
+
+outliers1 <- z  %>% filter(abs(z) > 2.5)
+outliers2 <- z  %>% filter(abs(z) > 3)
+
+par(mfrow = c(1,2))
+plot(new_dataset$priGPA, type='p',
+     col=ifelse(new_dataset$priGPA %in% outliers1$x, "red", "black"),
+     pch = ifelse(new_dataset$priGPA %in% outliers1$x, 17, 16))
+plot(new_dataset$priGPA, type='p',
+     col=ifelse(new_dataset$priGPA %in% outliers2$x, "red", "black"),
+     pch = ifelse(new_dataset$priGPA %in% outliers2$x, 17, 16))
 
 
+#---------------------------------------------------------------#
+# Comparación de las distribuciones: outliers vs. no-outliers   #------------------------------------------------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------#
 
+# Comparación de las distribuciones
+
+# Variables continuas
+dataset_continuas = new_dataset[c("attend",
+                                  "priGPA", "termGPA",
+                                  "ACT", "final",
+                                  "atndrte",
+                                  "hwrte", "stndfnl")]
+dataset_continuas$group = "outliers"
+# Estandarización de las variables
+# Función para estandarización
+plot_list = list()
+length(plot_list) = 8
+
+for (k in 1:8) {
+  df_1 = df_2 = dataset_continuas[,k]
+  df_2$z = as.vector(scale(df_1[,1]))
+  
+  df_2 = df_2 %>% filter(abs(z) <= 2.5)
+  
+  df_1$group = "outliers"
+  df_2$group = "no-outliers"
+  
+  df_2 = df_2[,c(1,3)]
+  colnames(df_2) = c(colnames(df_1)[1], "group")
+  
+  df = rbind(df_1, df_2)
+  colnames(df) = c("x", "group")
+  plot_list[[k]] = ggplot(data=df, aes(x=x, group=group, fill=group)) +
+    geom_density(adjust=1.5, alpha=.4) +
+    theme_classic() + theme(legend.position = c(0.2, 0.8),
+                            legend.title=element_blank()) +
+    labs(x = colnames(dataset_continuas[,k]))
+}
+
+ggarrange(plot_list[[1]], plot_list[[2]], plot_list[[3]],
+       plot_list[[4]], plot_list[[5]], plot_list[[6]],
+       plot_list[[7]], plot_list[[8]], ncol = 4, nrow = 2)
+
+#-------------------------------------------------------------------#
+# Normalidad de las variables continuas: outliers vs. no-outliers   #------------------------------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------#
+
+outliers_df <- data.frame(variable = rownames(ad),
+                         outliers_ad = round(ad, 4),
+                         outliers_lillie = round(li,4),
+                         outliers_pearson = round(pearson, 4),
+                         outliers_sw = round(sw, 4),
+                         outliers_sf = round(sf, 4))
+no_outliers_df <- data.frame(variable = rownames(ad),
+                             no.outliers_ad = round(ad, 4),
+                             no.outliers_lillie = round(li,4),
+                             no.outliers_pearson = round(pearson, 4),
+                             no.outliers_sw = round(sw, 4),
+                             no.outliers_sf = round(sf, 4))
+
+for (k in 1:8) {
+  df_1 = df_2 = dataset_continuas[,k]
+  df_2$z = as.vector(scale(df_1[,1]))
+  
+  df_2 = df_2 %>% filter(abs(z) <= 2.5)
+  
+  df_1$group = "outliers"
+  df_2$group = "no-outliers"
+  
+  df_2 = df_2[,c(1,3)]
+  colnames(df_2) = c(colnames(df_1)[1], "group")
+  
+  outliers_df$variable[k] = names(df_1)[1]
+  outliers_df$outliers_ad[k] = round(ad.test(as.vector(df_1[,1])[[1]])$p.value, 3)
+  outliers_df$outliers_lillie[k] = round(lillie.test(as.vector(df_1[,1])[[1]])$p.value, 3)
+  outliers_df$outliers_pearson[k] = round(pearson.test(as.vector(df_1[,1])[[1]])$p.value, 3)
+  outliers_df$outliers_sw[k] = round(shapiro.test(as.vector(df_1[,1])[[1]])$p.value, 3)
+  outliers_df$outliers_sf[k] = round(sf.test(as.vector(df_1[,1])[[1]])$p.value, 3)
+  
+  no_outliers_df$variable[k] = names(df_1)[1]
+  no_outliers_df$no.outliers_ad[k] = round(ad.test(as.vector(df_2[,1])[[1]])$p.value, 3)
+  no_outliers_df$no.outliers_lillie[k] = round(lillie.test(as.vector(df_2[,1])[[1]])$p.value, 3)
+  no_outliers_df$no.outliers_pearson[k] = round(pearson.test(as.vector(df_2[,1])[[1]])$p.value, 3)
+  no_outliers_df$no.outliers_sw[k] = round(shapiro.test(as.vector(df_2[,1])[[1]])$p.value, 3)
+  no_outliers_df$no.outliers_sf[k] = round(sf.test(as.vector(df_2[,1])[[1]])$p.value, 3)
+}
+
+summary_out <- merge(outliers_df, no_outliers_df)
+
+gt(summary_out, rowname_col = "variable") %>% 
+  tab_spanner_delim(
+    delim = "_"
+  ) 
+
+#-------------------------------------------------------------------#
+# Normalidad de las variables continuas: outliers vs. no-outliers   #------------------------------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------#
+
+# Resumen descriptivo total
+q1 <- new_dataset %>% dplyr::select(attend,
+                                    priGPA, termGPA,
+                                    ACT, final,
+                                    atndrte,
+                                    hwrte, stndfnl) %>% 
+  summarise(across(everything(),
+                   ~ quantile(.x, na.rm = T, 0.25))) %>% t() 
+q2 <- new_dataset %>% dplyr::select(attend,
+                                    priGPA, termGPA,
+                                    ACT, final,
+                                    atndrte,
+                                    hwrte, stndfnl) %>%  
+  summarise(across(everything(), ~ median(.x, na.rm = TRUE))) %>% t()
+
+q3 <- new_dataset %>% dplyr::select(attend,
+                                    priGPA, termGPA,
+                                    ACT, final,
+                                    atndrte,
+                                    hwrte, stndfnl) %>%  
+  summarise(across(everything(), ~ quantile(.x, na.rm = T, 0.75))) %>% t()
+
+outliers_summary <- data.frame(Variable = rownames(q1),
+                    Total = paste0(round(q2, 2), " (",
+                                   round(q1, 2), " - ",
+                                   round(q3, 2), ")"))
+
+no.outliers_summary <- outliers_summary
+
+for (k in 1:8) {
+  df_1 = df_2 = dataset_continuas[,k]
+  df_2$z = as.vector(scale(df_1[,1]))
+  
+  df_2 = df_2 %>% filter(abs(z) <= 2.5)
+  
+  df_1$group = "outliers"
+  df_2$group = "no-outliers"
+  
+  df_2 = df_2[,c(1,3)]
+  colnames(df_2) = c(colnames(df_1)[1], "group")
+  
+  q1 = quantile(as.vector(df_2[,1])[[1]], na.rm = T, 0.25)
+  q2 = quantile(as.vector(df_2[,1])[[1]], na.rm = T, 0.5)
+  q3 = quantile(as.vector(df_2[,1])[[1]], na.rm = T, 0.75)
+  
+  no.outliers_summary$Variable[k] = names(df_1)[1]
+  no.outliers_summary$Total[k] = paste0(round(q2, 2), " (",
+                                        round(q1, 2), " - ",
+                                        round(q3, 2), ")")
+}
+
+
+colnames(outliers_summary) = c("Variable", "Baseline")
+colnames(no.outliers_summary) = c("Variable", "No.Outliers")
+whole_summary = merge(outliers_summary,
+                      no.outliers_summary, by = "Variable")
+
+gt(whole_summary, rowname_col = "Variable")
 
