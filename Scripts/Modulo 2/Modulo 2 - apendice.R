@@ -15,8 +15,10 @@ library(reshape2)
 #----------------------#
 # Cargar base de datos #-------------------------------------------------------------------------------------------------------------------------
 #----------------------#
-setwd("C:/Users/PC/Desktop/Curso_EDA_2024_I")
+setwd("C:/Users/Portatil/Desktop/Curso_EDA_2024_I")
 dataset <- readxl::read_excel("Datos/Formatos/geih_dataset.xlsx")
+
+dataset <- dataset %>% filter(ingreso > 0)
 
 #--------------------------------#
 # Análisis exploratorio de datos #-------------------------------------------------------------------------------------------------------------------------
@@ -316,18 +318,18 @@ x2 = ggplot(dataset, aes(x = ingreso, y = 1)) +
   geom_density_ridges(jittered_points = TRUE, col = "black", alpha = 0.3,
                       fill = "white") +
   coord_flip() + theme_classic() +
-  geom_vline(xintercept = quantile(dataset$ingreso, 0.25),
+  geom_vline(xintercept = quantile(dataset$ingreso, 0.25, na.rm = T),
              col = "black") +
-  geom_vline(xintercept = quantile(dataset$ingreso, 0.5),
+  geom_vline(xintercept = quantile(dataset$ingreso, 0.5, na.rm = T),
              col = "black") +
-  geom_vline(xintercept = quantile(dataset$ingreso, 0.75),
+  geom_vline(xintercept = quantile(dataset$ingreso, 0.75, na.rm = T),
              col = "black") + xlim(c(0,35))
 
 # Box plot
 x3 = ggplot(dataset, aes(x = "", y = ingreso)) + 
   stat_boxplot(geom ='errorbar', col = "black")+
   geom_boxplot(outliers = T, col = "black",
-               fill = "white") + theme_classic() + ylim(c(0,35))
+               fill = "white") + theme_classic() 
 
 ggarrange(x1,x2,x3, ncol = 3, nrow = 1)
 ############ Fin del paréntesis Fin del paréntesis #############################
@@ -475,100 +477,38 @@ boxplot(new_dataset$priGPA^(1/3), horizontal=TRUE)
 #--------------------------------#
 
 # Resumen descriptivo total
-q1 <- new_dataset %>% dplyr::select(attend,
-                                     priGPA, termGPA,
-                                    ACT, final,
-                                    atndrte,
-                                    hwrte, stndfnl) %>% 
+library(janitor)
+
+dataset$ingreso2 = dataset$ingreso/1000
+
+# Definición de función Q2(Q1 - Q3)
+quantile_f <- function(x){
+  q1 <- quantile(x, na.rm = T, 0.25)
+  q2 <- quantile(x, na.rm = T, 0.5)
+  q3 <- quantile(x, na.rm = T, 0.75)
+  y <- paste0(round(as.numeric(q2), 1), " (",
+              round(as.numeric(q1), 2), " - ",
+              round(as.numeric(q3), 2), ")")
+  return(y)
+}
+
+total <- dataset %>% dplyr::select(ingreso2,
+                                    edad, horas_semana,
+                                    t_actual, t_viaje) %>% 
   summarise(across(everything(),
-                   ~ quantile(.x, na.rm = T, 0.25))) %>% t() 
-q2 <- new_dataset %>% dplyr::select(attend,
-                                    priGPA, termGPA,
-                                    ACT, final,
-                                    atndrte,
-                                    hwrte, stndfnl) %>%  
-  summarise(across(everything(), ~ median(.x, na.rm = TRUE))) %>% t()
-
-q3 <- new_dataset %>% dplyr::select(attend,
-                                    priGPA, termGPA,
-                                    ACT, final,
-                                    atndrte,
-                                    hwrte, stndfnl) %>%  
-  summarise(across(everything(), ~ quantile(.x, na.rm = T, 0.75))) %>% t()
-
-total <- data.frame(Variable = rownames(q1),
-                    Total = paste0(round(q2, 2), " (",
-                                   round(q1, 2), " - ",
-                                   round(q3, 2), ")"))
+                   ~ quantile_f(.x)))
 
 # Resumen descriptivo por grupos
-q1_group <- new_dataset %>%
-  group_by(soph) %>%
-  summarise(across(c("attend",
-                     "priGPA", "termGPA",
-                     "ACT", "final",
-                     "atndrte",
-                     "hwrte", "stndfnl"),
-                   ~ quantile(.x, na.rm = T, 0.25))) %>% t() 
 
-q2_group <- new_dataset %>%
-  group_by(soph) %>%
-  summarise(across(c("attend",
-                     "priGPA", "termGPA",
-                     "ACT", "final",
-                     "atndrte",
-                     "hwrte", "stndfnl"),
-                   ~ median(.x, na.rm = TRUE))) %>% t() 
+q_group <- dataset %>%
+  group_by(area) %>%
+  summarise(across(c("ingreso2",
+                     "edad", "horas_semana",
+                     "t_actual", "t_viaje"),
+                   list(sum = quantile_f))) %>% as.data.frame() 
 
-q3_group <- new_dataset %>%
-  group_by(soph) %>%
-  summarise(across(c("attend",
-                     "priGPA", "termGPA",
-                     "ACT", "final",
-                     "atndrte",
-                     "hwrte", "stndfnl"),
-                   ~ quantile(.x, na.rm = T, 0.75))) %>% t() 
-
-group <- data.frame(soph_0 = paste0(round(as.numeric(q2_group[-1,1]), 1), " (",
-                                    round(as.numeric(q1_group[-1,1]), 2), " - ",
-                                    round(as.numeric(q3_group[-1,1]), 2), ")"),
-                    soph_1 = paste0(round(as.numeric(q2_group[-1,2]), 1), " (",
-                                    round(as.numeric(q1_group[-1,2]), 2), " - ",
-                                    round(as.numeric(q3_group[-1,2]), 2), ")"))
-
-summary <- cbind(total,group) %>% gt()
-summary
 
 # Ejercicio: hacer lo mismo para la media y la desviación estándar
-mean <- new_dataset %>% dplyr::select(attend,
-                                      priGPA, termGPA) %>% 
-  summarise(across(everything(),
-                   ~ mean(.x, na.rm = TRUE))) %>% t() 
-sd <- new_dataset %>% dplyr::select(attend,
-                                    priGPA, termGPA) %>%  
-  summarise(across(everything(), ~ sd(.x, na.rm = TRUE))) %>% t()
-
-total <- data.frame(Variable = rownames(mean),
-                    Total = paste0(round(mean, 2), " (",
-                                   round(sd, 2), ")"))
-
-# Resumen descriptivo por grupos
-mean_group <- new_dataset %>%
-  group_by(soph) %>%
-  summarise(across(c("attend", "priGPA", "termGPA"),
-                   ~ mean(.x, na.rm = TRUE))) %>% t() 
-sd_group <- new_dataset %>%
-  group_by(soph) %>%
-  summarise(across(c("attend", "priGPA", "termGPA"),
-                   ~ sd(.x, na.rm = TRUE))) %>% t() 
-
-group <- data.frame(soph_0 = paste0(round(as.numeric(mean_group[-1,1]),1), " (",
-                                    round(as.numeric(sd_group[-1,1]),1),")"),
-                    soph_1 = paste0(round(as.numeric(mean_group[-1,2]),1)," (",
-                                    round(as.numeric(sd_group[-1,2]),1), ")"))
-
-summary <- cbind(total,group) %>% gt()
-summary
 
 
 
@@ -579,55 +519,117 @@ summary
 # Los valores atípicos pueden, o bien ser errores en el ingreso de la información, o bien
 # puede proporcionar información útil
 
-# Un histograma puede dar algunas luces
-ggplot(data = new_dataset) +
-  geom_histogram(mapping = aes(x = priGPA, col = priGPA),
+# Se propone el mismo ejercicio con otra variable: edad
+ggplot(data = dataset) +
+  geom_histogram(mapping = aes(x = horas_semana, col = edad),
                  fill = "lightskyblue", col = "black",
-                 binwidth = .2) + theme_bw()
+                 binwidth = 2) + theme_bw() 
 
 # El diagrama de caja sirve para identificar outliers
-boxplot(new_dataset$priGPA, horizontal = T)
+boxplot(dataset$horas_semana, horizontal = T)
 
 # Criterio IQR para la detección de outliers
 # Cualquier observación fuera de [q0.25 - 1.5IQR, q0.75 + 1.5IQR]
 # La siguiente función permite la detección de outliers
-boxplot.stats(new_dataset$priGPA)$out
+boxplot.stats(dataset$horas_semana)$out
 
 # Lo mismo puede ser obtenido manualmente
-Q1 <- quantile(new_dataset$priGPA, .25)
-Q3 <- quantile(new_dataset$priGPA, .75)
-IQR <- IQR(new_dataset$priGPA)
+Q1 <- quantile(dataset$horas_semana, .25, na.rm = T)
+Q3 <- quantile(dataset$horas_semana, .75, na.rm = T)
+IQR <- IQR(dataset$horas_semana, na.rm = T)
 
-outliers <- new_dataset %>% filter(priGPA<(Q1 - 1.5*IQR) | priGPA>(Q3 + 1.5*IQR))
+outliers <- dataset %>% filter(horas_semana<(Q1 - 1.5*IQR) | horas_semana>(Q3 + 1.5*IQR))
 
 # Comparación
-outliers$priGPA
-boxplot.stats(new_dataset$priGPA)$out
+length(outliers$horas_semana)
+length(boxplot.stats(dataset$horas_semana)$out)
 
 # Identificación de los outliers en la gráfica
-plot(new_dataset$priGPA, type='p',
-     col=ifelse(new_dataset$priGPA==outliers$priGPA, "red", "black"),
-     pch = ifelse(new_dataset$priGPA==outliers$priGPA, 17, 16))
+plot(dataset$horas_semana, type='p',
+     col=ifelse(dataset$horas_semana %in% outliers$horas_semana, "red", "black"),
+     pch = ifelse(dataset$horas_semana %in% outliers$horas_semana, 17, 1),
+     ylim = c(0, 100))
 
 
 # El problema de la identificación de valores atípicos es la definición de umbrales
 # Véase el criterio de Hair et al. (1999), por ejemplo:
 
 # Estandarizar la variable
-z <- data.frame(id = seq(1, nrow(new_dataset), by = 1),
-                x = new_dataset$priGPA,
-                z = scale(new_dataset$priGPA))
+z <- data.frame(id = seq(1, nrow(dataset), by = 1),
+                x = dataset$horas_semana,
+                z = scale(dataset$horas_semana))
 
 outliers1 <- z  %>% filter(abs(z) > 2.5)
 outliers2 <- z  %>% filter(abs(z) > 3)
 
 par(mfrow = c(1,2))
-plot(new_dataset$priGPA, type='p',
-     col=ifelse(new_dataset$priGPA %in% outliers1$x, "red", "black"),
-     pch = ifelse(new_dataset$priGPA %in% outliers1$x, 17, 16))
-plot(new_dataset$priGPA, type='p',
-     col=ifelse(new_dataset$priGPA %in% outliers2$x, "red", "black"),
-     pch = ifelse(new_dataset$priGPA %in% outliers2$x, 17, 16))
+plot(dataset$horas_semana, type='p',
+     col=ifelse(dataset$horas_semana %in% outliers1$x, "red", "black"),
+     pch = ifelse(dataset$horas_semana %in% outliers1$x, 17, 16))
+plot(dataset$horas_semana, type='p',
+     col=ifelse(dataset$horas_semana %in% outliers2$x, "red", "black"),
+     pch = ifelse(dataset$horas_semana %in% outliers2$x, 17, 16))
+
+
+#-------------------------------------------#
+# Ejercicio: Valores atípicos en ingresos   #------------------------------------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------#
+
+# Concentrémonos en los ingresos de Cali
+
+cali <- dataset %>% filter(area == "Cali")
+
+# Un histograma puede dar algunas luces
+ggplot(data = cali) +
+  geom_histogram(mapping = aes(x = ingreso2, col = ingreso2),
+                 fill = "lightskyblue", col = "black",
+                 binwidth = 600) + theme_bw() + xlim(c(0, 20000))
+
+# El diagrama de caja sirve para identificar outliers
+boxplot(cali$ingreso2, horizontal = T)
+
+# Criterio IQR para la detección de outliers
+# Cualquier observación fuera de [q0.25 - 1.5IQR, q0.75 + 1.5IQR]
+# La siguiente función permite la detección de outliers
+boxplot.stats(cali$ingreso)$out
+
+# Lo mismo puede ser obtenido manualmente
+Q1 <- quantile(cali$ingreso2, .25, na.rm = T)
+Q3 <- quantile(cali$ingreso2, .75, na.rm = T)
+IQR <- IQR(cali$ingreso2, na.rm = T)
+
+outliers <- cali %>% filter(ingreso2<(Q1 - 1.5*IQR) | ingreso2>(Q3 + 1.5*IQR))
+
+# Comparación
+length(outliers$ingreso2)
+length(boxplot.stats(cali$ingreso2)$out)
+
+# Identificación de los outliers en la gráfica
+plot(cali$ingreso2, type='p',
+     col=ifelse(cali$ingreso2 %in% outliers$ingreso2, "red", "black"),
+     pch = ifelse(cali$ingreso2 %in% outliers$ingreso2, 17, 1),
+     ylim = c(0, 20000))
+
+
+# El problema de la identificación de valores atípicos es la definición de umbrales
+# Véase el criterio de Hair et al. (1999), por ejemplo:
+
+# Estandarizar la variable
+z <- data.frame(id = seq(1, nrow(cali), by = 1),
+                x = cali$ingreso2,
+                z = scale(cali$ingreso2))
+
+outliers1 <- z  %>% filter(abs(z) > 2.5)
+outliers2 <- z  %>% filter(abs(z) > 3)
+
+par(mfrow = c(1,2))
+plot(cali$ingreso2, type='p',
+     col=ifelse(cali$ingreso2 %in% outliers1$x, "red", "black"),
+     pch = ifelse(cali$ingreso2 %in% outliers1$x, 17, 16))
+plot(cali$ingreso2, type='p',
+     col=ifelse(cali$ingreso2 %in% outliers2$x, "red", "black"),
+     pch = ifelse(cali$ingreso2 %in% outliers2$x, 17, 16))
+
 
 
 #---------------------------------------------------------------#
@@ -637,22 +639,27 @@ plot(new_dataset$priGPA, type='p',
 # Comparación de las distribuciones
 
 # Variables continuas
-dataset_continuas = new_dataset[c("attend",
-                                  "priGPA", "termGPA",
-                                  "ACT", "final",
-                                  "atndrte",
-                                  "hwrte", "stndfnl")]
+dataset_continuas = dataset[c("ingreso2",
+                                  "edad", "horas_semana",
+                                  "t_actual", "t_viaje")]
 dataset_continuas$group = "outliers"
+
+limits <- list(ingreso2 = c(0, 5000),
+               edad = c(0,100),
+               horas_semana = c(20, 80),
+               t_actual = c(0,250),
+               t_viaje = c(0,100))
+
 # Estandarización de las variables
 # Función para estandarización
 plot_list = list()
-length(plot_list) = 8
+length(plot_list) = 5
 
-for (k in 1:8) {
+for (k in 1:5) {
   df_1 = df_2 = dataset_continuas[,k]
   df_2$z = as.vector(scale(df_1[,1]))
   
-  df_2 = df_2 %>% filter(abs(z) <= 2.5)
+  df_2 = df_2 %>% filter(abs(z) <= 4)
   
   df_1$group = "outliers"
   df_2$group = "no-outliers"
@@ -662,16 +669,15 @@ for (k in 1:8) {
   
   df = rbind(df_1, df_2)
   colnames(df) = c("x", "group")
-  plot_list[[k]] = ggplot(data=df, aes(x=x, group=group, fill=group)) +
-    geom_density(adjust=1.5, alpha=.4) +
-    theme_classic() + theme(legend.position = c(0.2, 0.8),
-                            legend.title=element_blank()) +
-    labs(x = colnames(dataset_continuas[,k]))
+
+  plot_list[[k]] =  ggplot(df, aes(x=group,
+                                     y=x, fill=group)) + 
+    geom_boxplot() + coord_flip() +
+    guides(fill = "none")
 }
 
 ggarrange(plot_list[[1]], plot_list[[2]], plot_list[[3]],
-       plot_list[[4]], plot_list[[5]], plot_list[[6]],
-       plot_list[[7]], plot_list[[8]], ncol = 4, nrow = 2)
+       plot_list[[4]], plot_list[[5]], ncol = 1, nrow = 5)
 
 #-------------------------------------------------------------------#
 # Normalidad de las variables continuas: outliers vs. no-outliers   #------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -680,17 +686,13 @@ ggarrange(plot_list[[1]], plot_list[[2]], plot_list[[3]],
 outliers_df <- data.frame(variable = rownames(ad),
                          outliers_ad = round(ad, 4),
                          outliers_lillie = round(li,4),
-                         outliers_pearson = round(pearson, 4),
-                         outliers_sw = round(sw, 4),
-                         outliers_sf = round(sf, 4))
+                         outliers_pearson = round(pearson, 4))
 no_outliers_df <- data.frame(variable = rownames(ad),
                              no.outliers_ad = round(ad, 4),
                              no.outliers_lillie = round(li,4),
-                             no.outliers_pearson = round(pearson, 4),
-                             no.outliers_sw = round(sw, 4),
-                             no.outliers_sf = round(sf, 4))
+                             no.outliers_pearson = round(pearson, 4))
 
-for (k in 1:8) {
+for (k in 1:5) {
   df_1 = df_2 = dataset_continuas[,k]
   df_2$z = as.vector(scale(df_1[,1]))
   
@@ -706,15 +708,12 @@ for (k in 1:8) {
   outliers_df$outliers_ad[k] = round(ad.test(as.vector(df_1[,1])[[1]])$p.value, 3)
   outliers_df$outliers_lillie[k] = round(lillie.test(as.vector(df_1[,1])[[1]])$p.value, 3)
   outliers_df$outliers_pearson[k] = round(pearson.test(as.vector(df_1[,1])[[1]])$p.value, 3)
-  outliers_df$outliers_sw[k] = round(shapiro.test(as.vector(df_1[,1])[[1]])$p.value, 3)
-  outliers_df$outliers_sf[k] = round(sf.test(as.vector(df_1[,1])[[1]])$p.value, 3)
   
   no_outliers_df$variable[k] = names(df_1)[1]
   no_outliers_df$no.outliers_ad[k] = round(ad.test(as.vector(df_2[,1])[[1]])$p.value, 3)
   no_outliers_df$no.outliers_lillie[k] = round(lillie.test(as.vector(df_2[,1])[[1]])$p.value, 3)
   no_outliers_df$no.outliers_pearson[k] = round(pearson.test(as.vector(df_2[,1])[[1]])$p.value, 3)
-  no_outliers_df$no.outliers_sw[k] = round(shapiro.test(as.vector(df_2[,1])[[1]])$p.value, 3)
-  no_outliers_df$no.outliers_sf[k] = round(sf.test(as.vector(df_2[,1])[[1]])$p.value, 3)
+ 
 }
 
 summary_out <- merge(outliers_df, no_outliers_df)
@@ -724,40 +723,24 @@ gt(summary_out, rowname_col = "variable") %>%
     delim = "_"
   ) 
 
-#-------------------------------------------------------------------#
-# Normalidad de las variables continuas: outliers vs. no-outliers   #------------------------------------------------------------------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------#
+#----------------------------------------------------------------#
+# Resumen de las variables continuas: outliers vs. no-outliers   #------------------------------------------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------#
 
 # Resumen descriptivo total
-q1 <- new_dataset %>% dplyr::select(attend,
-                                    priGPA, termGPA,
-                                    ACT, final,
-                                    atndrte,
-                                    hwrte, stndfnl) %>% 
+outliers_summary <- dataset %>% dplyr::select(ingreso2,
+                                              edad, horas_semana,
+                                              t_actual, t_viaje) %>% 
   summarise(across(everything(),
-                   ~ quantile(.x, na.rm = T, 0.25))) %>% t() 
-q2 <- new_dataset %>% dplyr::select(attend,
-                                    priGPA, termGPA,
-                                    ACT, final,
-                                    atndrte,
-                                    hwrte, stndfnl) %>%  
-  summarise(across(everything(), ~ median(.x, na.rm = TRUE))) %>% t()
+                   ~ quantile_f(.x))) %>% t()
 
-q3 <- new_dataset %>% dplyr::select(attend,
-                                    priGPA, termGPA,
-                                    ACT, final,
-                                    atndrte,
-                                    hwrte, stndfnl) %>%  
-  summarise(across(everything(), ~ quantile(.x, na.rm = T, 0.75))) %>% t()
+out_summary <- data.frame(Variable = rownames(outliers_summary),
+                          Total = outliers_summary[,1])
 
-outliers_summary <- data.frame(Variable = rownames(q1),
-                    Total = paste0(round(q2, 2), " (",
-                                   round(q1, 2), " - ",
-                                   round(q3, 2), ")"))
 
-no.outliers_summary <- outliers_summary
+no.outliers_summary <- out_summary
 
-for (k in 1:8) {
+for (k in 1:5) {
   df_1 = df_2 = dataset_continuas[,k]
   df_2$z = as.vector(scale(df_1[,1]))
   
@@ -780,9 +763,9 @@ for (k in 1:8) {
 }
 
 
-colnames(outliers_summary) = c("Variable", "Baseline")
+colnames(out_summary) = c("Variable", "Baseline")
 colnames(no.outliers_summary) = c("Variable", "No.Outliers")
-whole_summary = merge(outliers_summary,
+whole_summary = merge(out_summary,
                       no.outliers_summary, by = "Variable")
 
 gt(whole_summary, rowname_col = "Variable")

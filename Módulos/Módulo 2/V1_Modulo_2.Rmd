@@ -191,7 +191,7 @@ Considérese las siguientes variables cualitativas previamente recodificadas:
 ::: {.column width="70%"}
 
 ```{r, echo=F, eval = T}
-plot_cat <- readRDS("C:/Users/PC/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_cat.rds")
+plot_cat <- readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_cat.rds")
 ```
 
 
@@ -206,7 +206,7 @@ plot_cat
 Idéntica información puede ser representada mediante el siguiente resumen:
 
 ```{r, echo=F, eval = T}
-count_prop <- tibble(readRDS("C:/Users/PC/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/count_prop.rds"))
+count_prop <- tibble(readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/count_prop.rds"))
 
 count_prop <- count_prop %>% dplyr::filter(!is.na(value))
 count_prop <- count_prop %>% dplyr::filter(name %in% c("actividad",
@@ -234,8 +234,9 @@ kable(count_prop[,2:ncol(count_prop)], format = "latex", booktabs = T,
 ## Resumen de datos cualitativos (cont.):
 
 El siguiente panel muestra un resumen para las variables dicotómicas:
+
 ```{r, echo=F, eval = T}
-plot_dic <- readRDS("C:/Users/PC/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_dic.rds")
+plot_dic <- readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_dic.rds")
 ```
 ```{r, echo=F, eval = T, fig.height=5, fig.align="center"}
 plot_dic
@@ -449,6 +450,203 @@ legend (x=-3, y=0.028, bty="n", leg.txt)
 
 :::
 :::
+
+
+
+## Valores atípicos
+
+La perspectiva univariante selecciona como **valores atípicos** u **outliers** aquellas observaciones que caen fuera de los rangos de la distribución. Un valor atípico se puede producir por alguna de las siguientes cuatro causas (Aldás y Uriel, 2017):
+
+- **Errores en los datos**: errores en la recolección o introducción de los datos.
+
+- **Erorres voluntarios**: errores intencionados en la respuesta del entrevistado.
+
+- **Errores de muestreo**: errores que son el resultado de introducir en la muestra a individuos pertenecientes a una población distinta a la **población objetivo**.
+
+- **Outliers legítimos**: caso de la población objetivo que, por la variabilidad de las muestras, difiere del resto de casos.
+
+
+## Detección univariada de valores atípicos
+
+Considérese las siguientes alternativas para la detección univariante de *outliers*:
+
+#### Criterio intercuartílico
+
+$$
+x^{*} \in [q_{0.25} - 1.5IQR, q_{0.75} + 1.5IQR]
+$$
+
+#### Criterio de valores estandarizados (Hair et al., 2014)
+
+- Para muestras pequeñas ($n < 80$), $x^{*}$ tiene valores estándar de 2.5 o superiores.
+
+- Para muestras mayores ($n \geq 80$), $x^{*}$ tiene valores estándar de 3-4 o superiores.
+
+#### Test de Grubbs
+
+El **Test de Grubbs** supone la normalidad de la distribución (Grubbs, 1969; Stefansky, 1971). La hipótesis nula (no hay *outliers*) se rechaza si
+
+$$
+G > \frac{n-1}{n}\sqrt{\frac{t^{2}_{(\alpha/2n, n-2)}}{n-2+t^{2}_{(\alpha/2n, n-2)}}}
+$$
+
+donde $G = {max |x_{i} - \bar{x}|}/{\sigma}$
+
+## Criterio intercuartílico y criterio de Hair et al. (1999)
+
+
+::: columns
+::: {.column width="50%"}
+
+```{r, eval = T, echo=FALSE,message=F, warning=F, prompt=FALSE, results = FALSE}
+# Se propone el mismo ejercicio con otra variable: edad
+# Resumen descriptivo total
+library(janitor)
+dataset$ingreso2 = dataset$ingreso/1000
+
+# Definición de función Q2(Q1 - Q3)
+quantile_f <- function(x){
+  q1 <- quantile(x, na.rm = T, 0.25)
+  q2 <- quantile(x, na.rm = T, 0.5)
+  q3 <- quantile(x, na.rm = T, 0.75)
+  y <- paste0(round(as.numeric(q2), 1), " (",
+              round(as.numeric(q1), 2), " - ",
+              round(as.numeric(q3), 2), ")")
+  return(y)
+}
+
+cali <- dataset %>% filter(area == "Cali")
+
+# Lo mismo puede ser obtenido manualmente
+Q1 <- quantile(cali$horas_semana, .25, na.rm = T)
+Q3 <- quantile(cali$horas_semana, .75, na.rm = T)
+IQR <- IQR(cali$horas_semana, na.rm = T)
+
+outliers <- cali %>% filter(horas_semana<(Q1 - 1.5*IQR) | horas_semana>(Q3 + 1.5*IQR))
+
+# Identificación de los outliers en la gráfica
+plot(cali$horas_semana, type='p',
+     col=ifelse(cali$horas_semana %in% outliers$horas_semana, "red", "black"),
+     pch = ifelse(cali$horas_semana %in% outliers$horas_semana, 17, 1),
+     ylim = c(0, 100),
+     main = "Detección univariante de outliers: criterio IQR")
+```
+
+
+:::
+  
+::: {.column width="50%"}
+
+```{r, eval = T, echo=FALSE,message=F, warning=F, prompt=FALSE, results = FALSE}
+z <- data.frame(id = seq(1, nrow(cali), by = 1),
+                x = cali$horas_semana,
+                z = scale(cali$horas_semana))
+
+outliers1 <- z  %>% filter(abs(z) > 2.5)
+outliers2 <- z  %>% filter(abs(z) > 4)
+
+par(mfrow = c(1,2))
+plot(cali$horas_semana, type='p',
+     col=ifelse(cali$horas_semana %in% outliers1$x, "red", "black"),
+     pch = ifelse(cali$horas_semana %in% outliers1$x, 17, 16),
+     
+     main = "Criterio de Hair et al. (2019): z > 2.5")
+plot(cali$horas_semana, type='p',
+     col=ifelse(cali$horas_semana %in% outliers2$x, "red", "black"),
+     pch = ifelse(cali$horas_semana %in% outliers2$x, 17, 16),
+     
+     main = "Criterio de Hair et al. (2019): z > 4")
+```
+
+
+:::
+:::
+
+
+## Resumen descriptivo: outliers y no-outliers
+
+```{r, echo=F, eval =T}
+# Resumen descriptivo total
+dataset_continuas = dataset[c("ingreso2",
+                                  "edad", "horas_semana",
+                                  "t_actual", "t_viaje")]
+
+melt_continuas <- melt(dataset_continuas)
+
+mean_f <- function(x){
+  return(mean(x, na.rm =T))
+}
+sd_f <- function(x){
+  return(sd(x, na.rm =T))
+}
+q1_f  <- function(x){
+  return(quantile(x, na.rm =T, 0.25))
+}
+q2_f  <- function(x){
+  return(quantile(x, na.rm =T, 0.5))
+}
+q3_f  <- function(x){
+  return(quantile(x, na.rm =T, 0.75))
+}
+
+out_summary <- melt_continuas %>% dplyr::group_by(variable) %>% 
+ summarise(across(everything(), list( 
+   mean = mean_f,
+   sd = sd_f,
+   q1 = q1_f,
+   q2 = q2_f,
+   q3 = q3_f)))
+
+out_summary$group = "outliers"
+
+no.outliers_summary <- out_summary
+
+for (k in 1:5) {
+  df_1 = df_2 = dataset_continuas[,k]
+  df_2$z = as.vector(scale(df_1[,1]))
+  
+  df_2 = df_2 %>% filter(abs(z) <= 3)
+  
+  df_1$group = "outliers"
+  df_2$group = "no-outliers"
+  
+  df_2 = df_2[,c(1,3)]
+  colnames(df_2) = c("x", "group")
+  
+  no.outliers_summary$value_mean[k] = mean_f(df_2$x)
+  no.outliers_summary$value_sd[k] = sd_f(df_2$x)
+  no.outliers_summary$value_q1[k] = q1_f(df_2$x)
+  no.outliers_summary$value_q2[k] = q2_f(df_2$x)
+  no.outliers_summary$value_q3[k] = q3_f(df_2$x)
+}
+
+no.outliers_summary$group = "no-outliers"
+
+whole_out <- rbind(out_summary, no.outliers_summary)
+
+kable(whole_out[,1:6], format = "latex", booktabs = T,
+      col.names = c(" ", "Mean",
+                    "SD", "Q1", "Q2", "Q3")) %>% 
+  pack_rows(index = table(whole_out$group))
+
+```
+
+
+## Alternativas
+
+Algunas alternativas para el tratamiento de valores atípicos son las siguientes:
+
+1. Eliminación de los valores atípicos para garantizar estimaciones correctas sobre la mayoría de la población (Judd et al., 2009).
+
+2. Suavizar la influencia de los valores atípicos mediante el uso de transformaciones (raíces o logaritmos) para reducir su rango (Hamilton, 1992)
+
+3. Análisis estadístico **robusto**.
+
+#### Desventajas
+
+- Perdida de información
+
+- No todas las transformaciones conservan el sentido teórico de la escala original.
 
 
 # Pruebas diagnóstico
@@ -775,3 +973,35 @@ qqPlot((df$t_viaje)^(1/3), main = "Crt Tiempo de desplazamiento", ylab = " ")
 
 ## Resumen descriptivo (mediana e IQR)
 
+```{r, eval = T, echo=FALSE,message=F, warning=F}
+
+
+
+total <- dataset %>% dplyr::select(ingreso2,
+                                    edad, horas_semana,
+                                    t_actual, t_viaje) %>% 
+  summarise(across(everything(),
+                   ~ quantile_f(.x)))
+
+q_total <- data.frame(area = "Total",
+                      ingreso2_sum = total$ingreso2,
+                      edad_sum = total$edad,
+                      horas_semana_sum = total$horas_semana,
+                      t_actual_sum = total$t_actual,
+                      t_viaje_sum = total$t_viaje)
+
+# Resumen descriptivo por grupos
+q_group <- dataset %>%
+  group_by(area) %>%
+  summarise(across(c("ingreso2",
+                     "edad", "horas_semana",
+                     "t_actual", "t_viaje"),
+                   list(sum = quantile_f))) %>% as.data.frame() 
+
+
+cont_summary <- rbind(q_total, q_group)
+
+kable(cont_summary, format = "latex",
+                  booktabs = T, col.names = c("Área" ,"Ingreso",
+                                              "Edad", "Horas (semana)", "Tiempo actual", "Tiempo de viaje"))
+```
