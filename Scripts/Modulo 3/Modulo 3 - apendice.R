@@ -4,13 +4,13 @@
 ## Módulo III: Análisis exploratorio de datos ##
 ################################################
 ################################################
-library(readxl)
+
 library(tidyverse)
 
 #----------------------#
 # Cargar base de datos #-------------------------------------------------------------------------------------------------------------------------
 #----------------------#
-setwd("C:/Users/PC/Desktop/Curso_EDA_2024_I")
+setwd("C:/Users/Portatil/Desktop/Curso_EDA_2024_I")
 dataset <- readxl::read_excel("Datos/Formatos/geih_dataset.xlsx")
 
 #----------------#
@@ -24,20 +24,20 @@ dataset <- readxl::read_excel("Datos/Formatos/geih_dataset.xlsx")
 # Variables  categóricas   #-------------------------------------------------------------------------------------------------------------------------
 #--------------------------#
 
+edu_area <- dataset %>% count(edu, area) %>%
+  group_by(area) %>% mutate(perc = (n/sum(n))*100)
+
 # Obtener la distribución de la variable continua diferenciada según la variable categórica
-ggplot(dataset,
-       aes(x = factor(edu),
-           fill = factor(edu))) + 
 
-  geom_bar(
-    aes(y = after_stat(count / ave(count, PANEL, FUN = sum)*100)),
-    position = "dodge"
-  ) + 
-
+ggplot(edu_area,
+       aes(x = fct_reorder(factor(edu), -perc),
+           y= perc, fill = factor(edu))) + 
+  geom_bar(stat = "identity") + facet_wrap(~area) + 
+  
   labs(x = "Nivel de educación máxima", y = "Proporción (%)") + 
   
   ggtitle("Nivel de educación según área metropolitana") + 
-
+  
   theme_bw() + 
   
   theme(plot.title = element_text(hjust = 0.5),
@@ -45,11 +45,97 @@ ggplot(dataset,
         axis.ticks = element_blank()) +
   facet_wrap(~area, ncol = 5) 
 
+# Examinar la tabla de contigencia
+con1<-table(dataset$area,dataset$edu)
+addmargins(con1)
+
+mosaicplot(con1, las = 2, shade = T)
+
+chisq.test(dataset$area, dataset$edu)
+
+# En lo sucesivo, el mismo ejercicio es realizado para 
+# examinar las diferencias según el sexo
+
+count_prop = dataset %>% select(c("sexo","parent",
+                                 "edu", "posic", "estable", "medio", "sintrab",
+                                 "cotiza_fondo", "arl", "caja",
+                                 "actividad")) %>%
+  mutate(across(.fns = as.factor)) %>%
+  tidyr::pivot_longer(cols = c("parent",
+                               "edu", "posic", "estable", "medio", "sintrab",
+                               "cotiza_fondo", "arl", "caja",
+                               "actividad")) %>%
+  dplyr::count(sexo, name, value, name = 'N') %>%
+  group_by(name) %>%
+  mutate(N = N,
+         Share = prop.table(N) * 100)
+
+count_prop <- tibble(readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/count_prop.rds"))
+
+count_prop <- count_prop %>% dplyr::filter(!is.na(value))
+count_prop <- count_prop %>% dplyr::filter(name %in% c("actividad",
+                                                       "edu",
+                                                       "cotiza_fondo"))
+
+count_prop$name <-  revalue(factor(count_prop$name), 
+                            c("actividad"="Actividad económica", "edu" = "Educación",
+                              "cotiza_fondo" = "Fondo de pensiones"))  
+#count_prop$value = substr(count_prop$value, 1, 35)
+count_prop$Share = round(count_prop$Share, 2)
+
+
+
+# Ahora bien, según la educación
+# Agregamos categorías menos frecuente
+
+# Creamos una función que permita replicar la prueba para
+# múltiple variables categóricas
+
+f_cat_var <- function(x, cat_var, df){
+  output <- data.frame(var_1 = rep(x, length(cat_var)),
+                       var_2 = NA, p_value = NA)
+  
+  for (i in 1:length(cat_var)) {
+    input <- df %>% select(x, cat_var[i]) 
+    colnames(input) = c("x", "y")
+    
+    if(ncol(input) == 2){
+      out <- chisq.test(as.factor(input$x),
+                        as.factor(input$y), 
+                        simulate.p.value = F)
+      
+      output$var_1[i] = x
+      output$var_2[i] = cat_var[i]
+      output$p_value[i] = round(out$p.value, 3)
+    } else {
+      output$var_1[i] = x
+      output$var_2[i] = cat_var[i]
+      output$p_value[i] = NA
+    }
+    
+    
+  }
+  
+  return(output)
+  
+}
+
+# Para obtener el resultado, necesitamos (1) la variable categórica principal
+# y (2) el vector completo de variables categóricas
+
+vec_cat <- c("sexo", "parent", "edu", "posic",
+             "estable", "medio", "sintrab", "arl",
+             "caja", "actividad")
+
+f_cat_var("caja", vec_cat, dataset)
+
 # Lo mismo puede ser aplicado para las variables con pocas categorías
 
-count_cat <- dataset %>% count(sexo, cambiar, estable, -
-                                 
-                                 l, caja, cotiza_fondo)
+dic_area <- dataset %>% count(area, sexo,
+                              arl, caja,
+                              estable, mas_h) %>%
+  group_by(area) %>% mutate(perc = (n/sum(n))*100)
+
 melt_count_cat <- reshape2::melt(count_cat)
 
 ggplot(tabulated, aes(x=1, y=N, fill=color)) +
@@ -59,6 +145,7 @@ ggplot(tabulated, aes(x=1, y=N, fill=color)) +
   coord_polar(theta = 'y') + 
   labs(x=NULL, y=NULL)
 dat2 <- reshape2::melt(dat)
+
 #-----------------------------#
 # Dos variables categóricas   #-------------------------------------------------------------------------------------------------------------------------
 #-----------------------------#

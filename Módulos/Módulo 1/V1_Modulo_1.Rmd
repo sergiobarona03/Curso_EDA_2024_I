@@ -45,15 +45,21 @@ R tiene las siguientes ventajas:
 ## R y RStudio
 
 ::: columns
-::: {.column width="60%"}
+::: {.column width="50%"}
+
+\bigskip
+
 RStudio es un \textbf{IDE (Integrated Development Environment)} para el lenguaje de programación R.
 
+\bigskip
 
 Para instalar R: \textcolor{cyan}{https://cran.r-project.org/}
 
+\bigskip
 
 Para instalar RStudio: \textcolor{cyan}{http://www.rstudio.com/download}
 
+\bigskip
 
 RStudio facilita el trabajo con R a través de una interfaz que es común a Windows, Mac OS y Linux.
 :::
@@ -61,6 +67,10 @@ RStudio facilita el trabajo con R a través de una interfaz que es común a Wind
 ::: {.column width="25%"}
 
 ![Caption for the picture.](Figuras/R.jpg)\
+
+\bigskip
+
+\bigskip
 
 ![Caption for the picture.](Figuras/RStudio.png)\
 :::
@@ -70,15 +80,21 @@ RStudio facilita el trabajo con R a través de una interfaz que es común a Wind
 
 ## Estructuras de datos en R
 
-Nos concentraremos en las siguientes estructuras de datos:
+En lo sucesivo, nos concentraremos en las estructuras de datos representadas en la **Figura 1**. (La figura omite los arreglos, `array()`, que es el resultado de aumenta la dimensión de una matriz).
 
-![Estructuras rectangulares de datos en R](Figuras/Estructures.png){width="70%"}
+![Estructuras principales de datos en R](Figuras/Estructures.png){width="75%"}
 
 
-## Clases de objetos
+
+## Tipos de vectores
 
 ::: columns
 ::: {.column width="60%"}
+
+\bigskip
+
+\bigskip
+
 La función `class()` permite recuperar alguna de las siguientes clases
 
 -   Cadena de caracteres
@@ -88,7 +104,7 @@ La función `class()` permite recuperar alguna de las siguientes clases
 :::
   
 ::: {.column width="40%"}
-![Caption for the picture.](Figuras/Clases.png)
+![Clases de vectores](Figuras/Clases.png)
 :::
 :::
   
@@ -118,7 +134,7 @@ Recuerde que
 :::
   
 ::: {.column width="40%"}
-![Caption for the picture.](Figuras/Vectores.png)
+![Ejemplos de ejecución por elementos](Figuras/Vectores.png)
 :::
 :::
   
@@ -128,43 +144,52 @@ Recuerde que
   
 ::: columns
 ::: {.column width="60%"}
-Una matriz se define usando `matrix()`. El parámetro `byrow`determina si las entradas son completadas por filas (`T`) o columnas (`F`).
+Una matriz se define usando `matrix()`. El parámetro `byrow` determina si las entradas son completadas por filas (`TRUE`) o columnas (`FALSE`). Así
 
 ```{r, echo=TRUE, eval = T}
-m1 <- matrix(1:9, nrow = 3, ncol = 3, byrow = T)
+m1 <- matrix(c(1,2,3,5), nrow = 2, ncol = 2, byrow = T)
 m1
 ```
 
 Las entradas son seleccionadas con `[i, j]`:
   
-```{r, echo=TRUE, eval = T}
-m1[2,3] # Fila 2 y columna 3
+```{r, echo=TRUE, eval = F}
+m1[2,2] # Fila 2 y columna 2
+m1[2,]  # Fila 2
+m1[ ,2] # Columna 2
 ```
 
 :::
   
 ::: {.column width="40%"}
-![Caption for the picture.](Figuras/Matrices.png)
+![Uso de índices en matrices](Figuras/Matrices.png)
+
 :::
 :::
-  
-  
+
+**Funciones importantes:** `rbind` (permite agregar filas), `cbind` (permite agregar columnas, `dim` (proporciona las dimensiones), `diag` extrae elementos de la diagonal, `nrow` y `ncol()` (proporciona el no. de filas y columnas, respectivamente)
+
 ## Nota: operaciones con matrices
   
 ::: columns
 ::: {.column width="50%"}
+
+\bigskip
+
+\bigskip
+
 A diferencia de la ejecución por elemento `a*b`, el producto de matrices se obtiene de
 
 ```{r, echo=TRUE, eval = T}
 m1 %*% t(m1) # m1 por su traspuesta
 ```
 
-La **Figura X** muestra otras operaciones útiles usando matrices
+La **Figura 5** muestra otras operaciones útiles usando matrices.
 
 :::
   
 ::: {.column width="50%"}
-![Caption for the picture.](Tablas/Operaciones_matrices.png)
+![Operaciones con matrices](Tablas/Operaciones_matrices.png)
 :::
 :::
   
@@ -183,13 +208,13 @@ df
 Al igual que una matriz, se seleccionan sus entradas usando `[i,j]`. También:
   
   
-```{r, echo=T, eval=T}
-df$edad
-df$edad[1]
-df[c("id", "edad")]
+```{r, echo=T, eval=F}
+df$edad              # seleccionar variable edad
+df$edad[1]           # primer elemento de edad
+df[c("id", "edad")]  # seleccionar las variables id y edad
 ```
 
-Para verificar sus nombres usamos `colnames()`. 
+Para verificar los nombres de las variables usamos `colnames()`. 
 
 ## Listas
 
@@ -204,12 +229,16 @@ lista <- list(vector1 = v1,
 lista
 ```
 
-La **Figura X** muestra el uso de los índices en el caso de las listas.
 
 :::
   
 ::: {.column width="50%"}
-![Caption for the picture.](Figuras/Listas.png)
+
+\bigskip
+
+\bigskip
+
+![Uso de índices en listas](Figuras/Listas.png)
 :::
 :::
   
@@ -218,7 +247,12 @@ La **Figura X** muestra el uso de los índices en el caso de las listas.
   
 ::: columns
 ::: {.column width="50%"}
-Usando condicionales, una operación es ejecutada si la condición se cumple (`TRUE`); de otro modo (`ELSE`), establece la operación que es ejecutada si la condición no se cumple (`FALSE`). La estructura es esta:
+
+\bigskip
+
+\bigskip
+
+Usando condicionales, una operación es ejecutada si la condición se cumple (`TRUE`); de otro modo (`ELSE`), establece la operación que es ejecutada si la condición no se cumple (`FALSE`). La estructura general es la siguiente:
   
   
 ```{r, echo=TRUE, eval = F}
@@ -233,30 +267,30 @@ if (condition) {
 :::
   
 ::: {.column width="50%"}
-![Caption for the picture.](Tablas/Operadores.png)
+![Descripción de operadores](Tablas/Operadores.png)
 :::
 :::
   
 ## Funciones
   
-La estructura general de una función es la siguiente
-
+En general, la estructura de una función es la siguiente:
 
 ```{r, echo=TRUE, eval = F}
 function(arg_1 = x1, arg_2 = x2, ..., arg_n = xn)
 ```
 
-Usando `function()`se pueden crear funciones a partir de la siguiente estructura:
+A partir de `function()`, se pueden crear funciones con base en la siguiente estructura:
   
 ```{r, echo=TRUE, eval = F}
 my_function = function(args){
   #statement
   #statement
+  #statemente
   return(y)
 }
 ```
 
-Usando `??`y `help()` se pueden conocer los detalles sobre los argumentos y la salida de las funciones en una librería. 
+Cuando se usan funciones definidas en una librería, se pueden conocer los detalles de los argumentos y la salida de la funciones con los comandos `??`y `help()`. 
 
 ## Ejercicio 
 
@@ -273,7 +307,7 @@ Usando `??`y `help()` se pueden conocer los detalles sobre los argumentos y la s
 
 ## Paquetes en R
 
-Los paquetes en R son colecciones de funciones, datos y documentación cuyo objetivo es  extender las capacidades básicas de R. CRAN (The Comprehensive R Archive Network) es una red de servidores que almacenan versiones de R, así como librerías en R que cumplen las políticas del repositorio CRAN (CRAN, 2022).
+Los paquetes en R son colecciones de funciones, datos y documentación cuyo objetivo es  extender las capacidades básicas de R. **CRAN** (The Comprehensive R Archive Network) es una red de servidores que almacenan versiones de R, así como librerías en R que cumplen las políticas del repositorio \textcolor{cyan}{(CRAN, 2022)}.
 
 Para instalar paquetes del repositorio **CRAN**:
   
@@ -297,9 +331,16 @@ help(dplyr)
 
 ::: columns
 ::: {.column width="50%"}
+
+\bigskip
+
+\bigskip
+
+\bigskip
+
 **Tidyverse** es un conjunto de librerías en R diseñadas para el análisis de datos (importar, transforma, visualizar y modelar con datos) (Wickham, 2019).
 
-
+\bigskip
 
 Nos concentraremos en las siguientes librerías:
   
@@ -310,21 +351,19 @@ Nos concentraremos en las siguientes librerías:
 :::
   
 ::: {.column width="50%"}
-![Caption for the picture.](Figuras/Tidyverse.png)
+![Librerías en Tidyverse](Figuras/Tidyverse.png)
 :::
 :::
   
 ## Importar datos
   
-Definir el directorio de trabajo:
+El primer paso es definir el directorio de trabajo:
   
 ```{r, echo=TRUE, eval=F}
 setwd("path")
 ```
 
 Nos concentraremos en funciones para importar los siguientes formatos de datos
-
-
 \begin{table}[ht]
 \centering
 \resizebox{11cm}{!}{
@@ -349,7 +388,7 @@ Nos concentraremos en funciones para importar los siguientes formatos de datos
   \cline{2-4}
   & .rds   &  readRDS()         &    base                 \\  
   \hline
-  
+  \hline
   \end{tabular}
 }
 \label{tab:multicol}
@@ -357,28 +396,36 @@ Nos concentraremos en funciones para importar los siguientes formatos de datos
 
 ## Pipe (%>%)
 
-Las tuberías de comando u operador \textit{pipe} (`%>%`) es una herramienta utilizada para el encadenamiento de funciones. El operador nos permite escribir una secuencia de operaciones
+La tubería de comando o *pipeline* (`%>%`) es una herramienta utilizada para el encadenamiento de funciones. El operador nos permite escribir una secuencia de operaciones
+
+Una secuencia en su **forma estándar** sigue la forma
 
 ```{r, echo=TRUE, eval=F}
-# Forma estándar:
-dataset_2 <- filter(dataset, attend > 15 & attend != 20)
+dataset_2 <- dplyr::filter(dataset, attend > 15 & attend != 20)
 
-# Forma encadenada:
-dataset_2 <- dataset %>% filter(attend > 15 & attend != 20)
 ```
 
-Recuerde el siguiente atajo: ![Caption for the picture.](Figuras/Atajo.jpg){width=100}\
+En **forma encadenada**:
+
+```{r, echo=TRUE, eval=F}
+dataset_2 <- dataset %>% dplyr::filter(attend > 15 & attend != 20)
+```
+
+El siguiente atajo es útil: ![Caption for the picture.](Figuras/Atajo.jpg){width=110}\
 
 ## Dplyr
 
 El paquete **dplyr** proporciona una sintaxis para la manipulación de datos. (El operador `%>%` pertenece a la sintaxis de dplyr). Nos concentraremos en las siguientes funciones:
   
-![Caption for the picture.](Figuras/Dplyr.png){width=300}
+![Algunas funciones en el paquete dplyr](Figuras/Dplyr.png){width=300}
 
 ## Resumen por grupo
 
 ::: columns
 ::: {.column width="50%"}
+
+\bigskip
+
 Usando las funciones `summarize()` y `group_by()`, obtenemos un resumen descriptivo de la base de datos diferenciado según una o más variables de control. Por ejemplo:
   
 ```{r, echo=TRUE, eval=F}
@@ -393,7 +440,7 @@ table_2 <- new_dataset %>% group_by(Int_attend) %>%
   summarize(MeanAttend = mean(attend), SdAttend = sd(attend))
 ```
 
-La **Figura X** muestra el funcionamiento de `summarize()` y `group_by()`.
+La **Figura 10** muestra el funcionamiento de `summarize()` y `group_by()`.
 
 :::
   
@@ -448,7 +495,7 @@ donde:
 \end{enumerate}
 
 
-## Recursos alternativos
+# Recursos alternativos
 
 
 - La librería `swirl` proporciona un tutorial sobre elementos básicos en R
