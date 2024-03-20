@@ -10,7 +10,7 @@ library(tidyverse)
 #----------------------#
 # Cargar base de datos #-------------------------------------------------------------------------------------------------------------------------
 #----------------------#
-setwd("C:/Users/Portatil/Desktop/Curso_EDA_2024_I")
+setwd("C:/Users/PC/Desktop/Curso_EDA_2024_I")
 dataset <- readxl::read_excel("Datos/Formatos/geih_dataset.xlsx")
 
 #----------------#
@@ -70,20 +70,7 @@ count_prop = dataset %>% select(c("sexo","parent",
   mutate(N = N,
          Share = prop.table(N) * 100)
 
-count_prop <- tibble(readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/count_prop.rds"))
-
-count_prop <- count_prop %>% dplyr::filter(!is.na(value))
-count_prop <- count_prop %>% dplyr::filter(name %in% c("actividad",
-                                                       "edu",
-                                                       "cotiza_fondo"))
-
-count_prop$name <-  revalue(factor(count_prop$name), 
-                            c("actividad"="Actividad económica", "edu" = "Educación",
-                              "cotiza_fondo" = "Fondo de pensiones"))  
-#count_prop$value = substr(count_prop$value, 1, 35)
-count_prop$Share = round(count_prop$Share, 2)
-
-
+# Examinamos idénticas diferencias según la variable educación
 
 # Ahora bien, según la educación
 # Agregamos categorías menos frecuente
@@ -127,79 +114,326 @@ vec_cat <- c("sexo", "parent", "edu", "posic",
              "estable", "medio", "sintrab", "arl",
              "caja", "actividad")
 
-f_cat_var("caja", vec_cat, dataset)
+f_cat_var("sexo", vec_cat, dataset)
 
-# Lo mismo puede ser aplicado para las variables con pocas categorías
+# Lo mismo puede ser aplicado para la variable educación
 
-dic_area <- dataset %>% count(area, sexo,
-                              arl, caja,
-                              estable, mas_h) %>%
-  group_by(area) %>% mutate(perc = (n/sum(n))*100)
+count_prop = dataset %>% select(c("edu","parent",
+                                  "sexo", "posic", "estable", "medio", "sintrab",
+                                  "cotiza_fondo", "arl", "caja",
+                                  "actividad")) %>%
+  mutate(across(.fns = as.factor)) %>%
+  tidyr::pivot_longer(cols = c("parent",
+                               "sexo", "posic", "estable", "medio", "sintrab",
+                               "cotiza_fondo", "arl", "caja",
+                               "actividad")) %>%
+  dplyr::count(edu, name, value, name = 'N') %>%
+  group_by(name) %>%
+  mutate(N = N,
+         Share = prop.table(N) * 100)
 
-melt_count_cat <- reshape2::melt(count_cat)
+f_cat_var("edu", vec_cat, dataset)
 
-ggplot(tabulated, aes(x=1, y=N, fill=color)) +
-  geom_bar(position = 'fill', stat = 'identity')  +
-  facet_grid(clarity ~ cut) + 
-  xlim(0.5, 2.5) +
-  coord_polar(theta = 'y') + 
-  labs(x=NULL, y=NULL)
-dat2 <- reshape2::melt(dat)
+# Se verifica, por ejemplo, que el nivel educativo no es independiente
+# del fondo de pensiones en el cual está cotizando el trabajador (o si lo hace)
 
-#-----------------------------#
-# Dos variables categóricas   #-------------------------------------------------------------------------------------------------------------------------
-#-----------------------------#
-# Para visualizar la covariación entre dos variables categóricas:
-dataset$frosh = as.factor(dataset$frosh)
-dataset$soph = as.factor(dataset$soph)
-ggplot(data = dataset) +
-  geom_count(mapping = aes(x = frosh,
-                           y = soph))
+# Para la presentación: se muestra la matriz completa
 
-# Otra opción es la siguiente:
-dataset %>% count(frosh, soph) %>%
-  ggplot(mapping = aes(x = frosh,
-                       y= soph)) +
-  geom_tile(mapping = aes(fill = n))
+dataset$medio = fct_lump_n(factor(dataset$medio), 5)
+
+edu_fondo <- dataset %>% dplyr::count(sexo, medio) %>%
+  group_by(sexo) %>% mutate(perc = (n/sum(n))*100)
+
+p.value <- chisq.test(dataset$sexo, dataset$medio)$p.value
+
+ggplot(edu_fondo, aes(x = sexo, y = perc,
+                  fill = fct_reorder(medio, perc)) ) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  annotate("text", x=1, y=13, label=paste0("Chi-2 test, p-value: ", signif(p.value,4))) +
+  theme_bw() + scale_fill_brewer(palette = "PuOr") +
+  labs(x = "Sexo", y = "Participación (%)",
+       fill = "Medio")
+
+p.value <- chisq.test(dataset$sexo, dataset$posic)$p.value
+
+sp <- dataset %>% dplyr::count(sexo, posic) %>%
+  group_by(sexo) %>% mutate(perc = (n/sum(n))*100)
+
+ggplot(sp, aes(x = sexo, y = perc,
+                      fill = fct_reorder(posic, perc)) ) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  annotate("text", x=1, y=28, label=paste0("Chi-2 test, p-value: ", signif(p.value,4))) +
+  theme_bw() + scale_fill_brewer(palette = "PuOr") +
+  labs(x = "Sexo", y = "Participación (%)",
+       fill = "Puesto laboral")
+
+#-----------------------------------------------#
+# Variables continuas y variables categóricas   #-------------------------------------------------------------------------------------------------------------------------
+#-----------------------------------------------#
+
+library(ggpubr)
+
+dataset$ingreso2 = dataset$ingreso/1000
+
+# Ingreso laboral según el nivel educativo
+ggboxplot(dataset, x = "edu", y = "ingreso2",
+          color = "edu", palette = "jco",
+          outlier.shape = NA)+
+  stat_compare_means() + ylim(c(0, 6000)) +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = "Ingreso laboral (miles $) según el nivel educativo",
+       y = "Ingreso (miles $)", x = "",
+       color = "Nivel")
+
+# Añadir la comparación por pares
+comparisons <- list( c("Maestría", "Doctorado"),
+                     c("Secundaria", "Maestría"),
+                     c("Primaria", "Secundaria") )
+
+ggboxplot(dataset, x = "edu", y = "ingreso2",
+          color = "edu", palette = "jco",
+          outlier.shape = NA) + 
+  stat_compare_means(comparisons = comparisons, 
+                     label.y = c(10000, 11000, 12000),
+                     bracket.size = 0.2,
+                     label =  "p.signif") + 
+  stat_compare_means(label.y = 11000)  +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = "Ingreso laboral (miles $) según el nivel educativo",
+       y = "Ingreso (miles $)", x = "",
+       color = "Nivel") + ylim(c(0,18000))
+
+# Ingreso laboral según si el nivel educativo y el sexo
+
+comparisons <- list( c("Maestría", "Doctorado"),
+                     c("Secundaria", "Maestría"),
+                     c("Primaria", "Secundaria") )
+
+ggboxplot(dataset, x = "edu", y = "ingreso2",
+          color = "edu", palette = "jco",
+          facet.by = "sexo",
+          outlier.shape = NA) + 
+  stat_compare_means(comparisons = comparisons, 
+                     label.y = c(10000, 11000, 12000),
+                     bracket.size = 0.2,
+                     label =  "p.signif") + 
+  stat_compare_means(label.y = 11000,
+                     label.x = 2)  +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = "Ingreso laboral (miles $) según el nivel educativo",
+       y = "Ingreso (miles $)", x = "",
+       color = "Nivel") + ylim(c(0,18000))
+
+# Un ejercicio similar es realizado para otras variables
+# Presento las diferencias según variables continuas y variables categóricas
+
+lista_kruskal = list(area = data.frame(),
+                     sexo = data.frame(),
+                     parent = data.frame(),
+                     edu = data.frame(),
+                     lugar = data.frame(),
+                     medio = data.frame(),
+                     cotiza_fondo = data.frame(),
+                     actividad = data.frame())
+
+categoricas = c("area", "sexo", "parent", "edu", "lugar",
+                "medio", "cotiza_fondo", "actividad")
+
+continuas = c("ingreso", "edad","horas_semana", "t_actual",
+              "t_viaje")
+
+data_kruskal = dataset[c("id", categoricas, continuas)]
+
+hipotesis = continuas
+
+for (i in categoricas) {
+  item_cat = which(names(lista_kruskal) ==i)
+  lista_kruskal[[item_cat]] = data.frame(Variables = hipotesis,
+                                         Chi_2 = rep(NA, length(hipotesis)),
+                                         p = rep(NA, length(hipotesis)))
+  
+  for (j in hipotesis) {
+    item_hyp = which(lista_kruskal[[item_cat]]$Variables == j )  
+    
+    kruskal_aux = data_kruskal[c(j,i)] 
+    colnames(kruskal_aux) = c("continua", "discreta")
+    kruskal_aux$continua = as.numeric(kruskal_aux$continua)
+    kruskal_aux$discreta = as.factor(kruskal_aux$discreta)
+    kruskal_test_aux = kruskal.test(kruskal_aux$continua~kruskal_aux$discreta)
+    lista_kruskal[[item_cat]]$Chi_2[item_hyp] = paste0(round(kruskal_test_aux$statistic, digits = 1),
+                                                       " (",
+                                                       kruskal_test_aux$parameter
+                                                       , ")")
+    
+    lista_kruskal[[item_cat]]$p[item_hyp]  = round(kruskal_test_aux$p.value, digits = 2)
+  }
+  
+  colnames(lista_kruskal[[item_cat]]) = c("Variables", 
+                                          paste0(i,"_Chi_2"),
+                                          paste0(i,"_p"))
+}
+
+# Resultados generales
+kruskal = merge(lista_kruskal[[1]], lista_kruskal[[2]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[3]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[4]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[5]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[6]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[7]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[8]], by = "Variables")
 
 #-----------------------------#
 # Dos variables continuas     #-------------------------------------------------------------------------------------------------------------------------
 #-----------------------------#
+
+pairs(mtcars[, c(1, 3:6)],
+      main = "Scatter Plot Matrix for mtcars Dataset")
+
 # La aproximación básica es un scatter plot:
 ggplot(data = dataset) +
-  geom_point(mapping = aes(x = termGPA,
-                           y = priGPA))
+  geom_point(mapping = aes(x = edad,
+                           y = ingreso/1000,
+                           col = sexo)) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(4,"Blues")[3:4])
 
 # El parámetro de transparencia (alpha) puede ser usado para 
 # el caso de grandes bases de datos 
 ggplot(data = dataset) + 
-  geom_point(mapping = aes(x = termGPA,
-                           y = priGPA),
+  geom_point(mapping = aes(x = edad,
+                           y = t_actual),
              alpha = 0.2)
 
 # Una forma de agrupar los datos es la siguiente:
 # (PENSAR SI TERMINA SIENDO AGREGADO)
 ggplot(data = dataset) + 
-  geom_bin2d(mapping = aes(x = termGPA,
-                           y = priGPA))
+  geom_bin2d(mapping = aes(x = edad,
+                           y = t_actual))
 
 # El mismo resultado se puede alcanzar con el paquete Hexbin
 install.packages("hexbin")
 library(hexbin)
 ggplot(data = dataset,
-       mapping = aes(x = termGPA,
-                     y = priGPA)) +
-  geom_boxplot(aes(group = cut_width(termGPA, 
-                                     0.9)))
+       mapping = aes(x = edad,
+                     y = t_actual)) +
+  geom_boxplot(aes(group = cut_width(edad, 
+                                     10)))
+
+# Es posible determinar el ajuste mediante la función geom_smooth
+ggplot(data = dataset, aes(x = edad, y = t_actual)) +
+  geom_point() +
+  geom_smooth(method = "lm", 
+                se = TRUE) +
+  labs(title = "Edad (años cumplidos) y tiempo en el trabajo actual",
+       x = "Edad (en años)",
+       y = "Tiempo en el trabajo actual")
 
 
+ggplot(data = dataset, aes(x = edad, y = t_actual)) +
+  geom_point(aes(color = factor(sexo))) +
+  geom_smooth(method = "lm", 
+              se = FALSE, 
+              aes(color = factor(sexo)))  +
+  labs(title = "Edad (años cumplidos) y tiempo en el trabajo actual",
+       x = "Edad (en años)",
+       y = "Tiempo en el trabajo actual")
 
-##########################################
-##########################################
-## Nota pendiente: pruebas estadísticas ##
-##########################################
-##########################################
+# Lo mismo se puede hacer para  cotiza_fondo y la edad
+ggplot(dataset, aes(edad, log(ingreso))) + 
+  geom_point() + 
+  geom_smooth(method = "lm", 
+              se = TRUE) +
+  facet_wrap(~edu)
 
+# Para las demás variables es  útil examinar un scatter plot conjunto
+# Para eso es útil la siguiente función base
+cont_ds <- dataset %>% select(ingreso, edad, horas_semana, t_actual)
+pairs(cont_ds, 
+      main = "Scatter Plot Matrix for Dataset",
+      col = RColorBrewer::brewer.pal(4,"Blues"))
+
+# Matriz de correlación para múltiples variables
+library(corr)
+
+  
+cor_ds <- cor(cont_ds)
+head(round(cor_ds,2))
+
+# visualizing correlogram
+# as circle
+corrplot(cor_ds, method="circle")
+
+# as pie
+corrplot(M, method="pie")
+
+# as colour
+corrplot(M, method="color")
+
+# as number
+corrplot(M, method="number")
+
+# Correlación sobre las variables transformadas
+
+
+corr1 = cor(cont_ds[,-1], 
+            cont_ds$ingreso) %>% as.data.frame() %>% rownames_to_column(var = "variable")
+
+corr2 = cor(cont_ds[,-1], 
+            log(cont_ds$ingreso))%>% as.data.frame() %>% rownames_to_column(var = "variable")
+
+corr3 = cor(log(cont_ds[,-1]), 
+            log(cont_ds$ingreso)) %>% as.data.frame() %>% rownames_to_column(var = "variable")
+
+plot.corr1 = ggplot(corr1, aes(x = variable,
+                               y = V1, fill = V1)) +
+  geom_bar(stat = "identity") + theme_classic() +
+  labs(x = "Variable", y = "Corr", title = "lin-lin",
+       fill = "") +
+  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1))
+
+plot.corr2 = ggplot(corr2, aes(x = variable,
+                               y = V1, fill = V1)) +
+  geom_bar(stat = "identity") + theme_classic() +
+  labs(x = "Variable", y = "Corr", title = "log-lin",
+       fill = "") +
+  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1)) 
+
+plot.corr3 = ggplot(corr3, aes(x = variable,
+                               y = V1, fill = V1)) +
+  geom_bar(stat = "identity") + theme_classic() +
+  labs(x = "Variable", y = "Corr", title = "log-log",
+       fill = "") +
+  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1))
+
+
+ggarrange(plot.corr1,
+          plot.corr2,
+          plot.corr3, ncol = 3,nrow = 1)
+
+# El paquete psych
+library(psych)
+
+pairs.panels(cont_ds, main = "Scatter Plot Matrix for mtcars Dataset")
+
+###########################################################
+###########################################################
+## Pendiente1 : Valores atípicos: detección multivariada ##
+###########################################################
+###########################################################
+
+##########################################################
+##########################################################
+## Pendiente2: Valores atípicos: detección multivariada ##
+##########################################################
+##########################################################
 
 
 
