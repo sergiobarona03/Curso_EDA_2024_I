@@ -277,35 +277,40 @@ for (i in 1:nrow(dataset_final)) {
 
 # Usamos los valores entre el percentil 10 y 100
 
-p10 = quantile(dataset_final$ingreso, 0.1, na.rm = T)
+p15 = quantile(dataset_final$ingreso, 0.15, na.rm = T)
 
+dataset_final$ingreso[is.na(dataset_final$ingreso)] = 999999 
 dataset_final <- dataset_final %>% filter(ingreso > p10) 
+dataset_final$ingreso[dataset_final$ingreso == 999999] = NA
 
 #----------------------------------------------------#
 # La base de datos es guardado en distintos formatos #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #----------------------------------------------------#
 
+# Muestreo aleatorio
 
+sample_ds <- dataset_final[sample(nrow(dataset_final),
+                  1100, replace = FALSE, prob = NULL),]
 
-write_csv(dataset_final, "Datos/Formatos/geih_dataset.csv")
+write_csv(sample_ds, "Datos/Formatos/geih_dataset.csv")
 
-write.table(dataset_final, file = "Datos/Formatos/geih_dataset.txt", 
+write.table(sample_ds, file = "Datos/Formatos/geih_dataset.txt", 
             append = TRUE, sep = "\t", row.names=FALSE, col.names=FALSE, quote=FALSE)
 
-writexl::write_xlsx(dataset_final, "Datos/Formatos/geih_dataset.xlsx")
+writexl::write_xlsx(sample_ds, "Datos/Formatos/geih_dataset.xlsx")
 
 library(foreign)
-haven::write_sav(dataset_final, "Datos/Formatos/geih_dataset.spss")
+haven::write_sav(sample_ds, "Datos/Formatos/geih_dataset.spss")
 
 haven::read_sav("Datos/Formatos/geih_dataset.spss")
 
 library(haven)
-write_dta(dataset_final, "Datos/Formatos/geih_dataset.dta")
+write_dta(sample_ds, "Datos/Formatos/geih_dataset.dta")
 
-write_sas(dataset_final, "Datos/Formatos/geih_dataset.sas")
+write_sas(sample_ds, "Datos/Formatos/geih_dataset.sas")
 
-save(dataset_final, file='Datos/Formatos/geih_dataset.rda')
+save(sample_ds, file='Datos/Formatos/geih_dataset.rda')
 
-save(dataset_final, file='Datos/Formatos/geih_dataset.rds')
+save(sample_ds, file='Datos/Formatos/geih_dataset.rds')
 
 

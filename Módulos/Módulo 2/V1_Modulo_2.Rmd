@@ -14,13 +14,12 @@ header-includes:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE, message = FALSE)
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
 knitr::knit_hooks$set(chunk = function(x, options) {
   x <- def.chunk.hook(x, options)
   paste0("\n \\", "tiny","\n\n", x, "\n\n \\normalsize")
 })
-
 
 
 ```
@@ -32,6 +31,189 @@ library(plyr)
 library(tidyverse)
 library(reshape2)
 ```
+
+
+
+# Herramientas para la manipulación de datos
+
+## Paquetes en R
+
+Los paquetes en R son colecciones de funciones, datos y documentación cuyo objetivo es  extender las capacidades básicas de R. **CRAN** (The Comprehensive R Archive Network) es una red de servidores que almacenan versiones de R, así como librerías en R que cumplen las políticas del repositorio \textcolor{cyan}{(CRAN, 2022)}.
+
+Para instalar paquetes del repositorio **CRAN**:
+  
+```{r, echo=TRUE, eval = F}
+install.packages(“dplyr”)
+```
+
+Después de instalar el paquete, se debe cargar la librería:
+
+```{r, echo=TRUE, eval = F}
+library(dplyr)
+```
+
+Para encontrar la documentación del paquete:
+  
+```{r, echo=TRUE, eval = F}
+help(dplyr)
+```
+
+## Tidyverse
+
+::: columns
+::: {.column width="50%"}
+
+\bigskip
+
+\bigskip
+
+\bigskip
+
+**Tidyverse** es un conjunto de librerías en R diseñadas para el análisis de datos (importar, transforma, visualizar y modelar con datos) (Wickham, 2019).
+
+\bigskip
+
+Nos concentraremos en las siguientes librerías:
+  
+- dplyr
+- ggplot2
+- forcats*
+  
+:::
+  
+::: {.column width="50%"}
+![Librerías en Tidyverse](Figuras/Tidyverse.png)
+:::
+:::
+  
+## Importar datos
+  
+El primer paso es definir el directorio de trabajo:
+  
+```{r, echo=TRUE, eval=F}
+setwd("path")
+```
+
+Nos concentraremos en funciones para importar los siguientes formatos de datos
+\begin{table}[ht]
+\centering
+\resizebox{11cm}{!}{
+  \begin{tabular}{|*{4}{c|}}
+  \hline
+  \textbf{Formato} & \textbf{Formato específico}  & \textbf{Función} & \textbf{Paquete}  \\
+  \hline
+  Texto o tabulares & CSV   &  read\_csv()        & readr \\  
+  \cline{2-4}
+  &      Otros formatos de texto    &  read\_delim()   &        readr              \\ 
+  \hline
+  Formatos de otros programas           &  Excel         & read\_excel()           &  readxl   \\ 
+  \cline{2-4}
+  & SPSS   &  read\_sav()         &  haven                   \\  
+  \cline{2-4}
+  & STATA          &  read\_dta()         & haven                     \\  
+  \cline{2-4}
+  & SAS          &  read\_sas()         &   haven                   \\
+  \hline
+  
+  Formatos propios de R          &  .rda         & load()           &  base   \\ 
+  \cline{2-4}
+  & .rds   &  readRDS()         &    base                 \\  
+  \hline
+  \hline
+  \end{tabular}
+}
+\label{tab:multicol}
+\end{table}
+
+## Pipe (%>%)
+
+La tubería de comando o *pipeline* (`%>%`) es una herramienta utilizada para el encadenamiento de funciones. El operador nos permite escribir una secuencia de operaciones
+
+Una secuencia en su **forma estándar** sigue la forma
+
+```{r, echo=TRUE, eval=F}
+dataset_2 <- dplyr::filter(dataset, attend > 15 & attend != 20)
+
+```
+
+En **forma encadenada**:
+
+```{r, echo=TRUE, eval=F}
+dataset_2 <- dataset %>% dplyr::filter(attend > 15 & attend != 20)
+```
+
+El siguiente atajo es útil: ![Caption for the picture.](Figuras/Atajo.jpg){width=110}\
+
+## Dplyr
+
+El paquete **dplyr** proporciona una sintaxis para la manipulación de datos. (El operador `%>%` pertenece a la sintaxis de dplyr). Nos concentraremos en las siguientes funciones:
+  
+![Algunas funciones en el paquete dplyr](Figuras/Dplyr.png){width=300}
+
+## Resumen por grupo
+
+::: columns
+::: {.column width="50%"}
+
+\bigskip
+
+Usando las funciones `summarize()` y `group_by()`, obtenemos un resumen descriptivo de la base de datos diferenciado según una o más variables de control. Por ejemplo:
+  
+```{r, echo=TRUE, eval=F}
+# Resumen general
+table_1 <- new_dataset %>% filter(Int_attend == "Group 4")
+%>%   summarize(MeanAttend = mean(attend),SdAttend = sd(attend)) 
+```
+
+```{r, echo=TRUE, eval=F}
+# Resumen diferenciado
+table_2 <- new_dataset %>% group_by(Int_attend) %>%
+  summarize(MeanAttend = mean(attend), SdAttend = sd(attend))
+```
+
+La **Figura 10** muestra el funcionamiento de `summarize()` y `group_by()`.
+
+:::
+  
+::: {.column width="46%"}
+![Caption for the picture.](Figuras/Group_summary.png)
+:::
+:::
+  
+## ggplot2
+  
+El paquete **ggplot2** proporciona un sistema coherente para visualizar datos y crear gráficos. La versatilidad de **ggplot2** radica en el uso de la Gramática de Gráficos (*Grammar of Graphics*).
+
+```{r, eval =F, echo=T}
+ggplot(dataset, aes()) + geometría + faceta + opciones
+```
+
+donde:
+  
+\begin{enumerate}
+
+\item{\textit{dataset} es un data frame}
+
+\item{Las características del mapa \textbf{aes()} describe los ejes $(x,y)$, el color exterior (\textbf{color} o \textbf{colour}), el color interior (\textbf{fill}), la forma de los puntos (\textbf{shape}), el tipo de línea (\textbf{linetype}) y el tamaño (\textbf{size})}
+
+\item{Los objetos geométricos (\textbf{geometría}) determinan el tipo de gráfico:
+    
+  \begin{itemize}
+  
+  \item{Puntos ($geom\_point$)}
+  \item{Líneas ($geom\_lines$)}
+  \item{Histogramas ($geom\_histogram$)}
+  \item{Boxplot ($geom\_boxplot$)}
+  
+  \end{itemize}
+}
+
+\item{La \textbf{faceta} permite dividir un gráfico en múltiples gráficos de acuerdo con grupos}
+
+
+
+\end{enumerate}
+
 
 # Introducción al EDA
 
@@ -57,7 +239,7 @@ El Análisis Exploratorio de Datos (EDA, por sus siglas en inglés) proporciona 
 :::
   
 ::: {.column width="40%"}
-![Caption for the picture.](Figuras/Tukey.jpg)
+![Tukey (1977). Exploratory Data Analysis](Figuras/Tukey.jpg)
 :::
 :::
 
@@ -74,7 +256,7 @@ Mediante métodos gráficos y descriptivos, el EDA permite \textcolor{cyan}{(Car
 - Proponer estrategias para la modelación
 
 ## EDA y CDA
-![Caption for the picture.](Figuras/EDA_CDA.png){width=250}
+![Análisis Exploratorio de Datos (EDA) y Análisis Confirmatorio de Datos (CDA)](Figuras/EDA_CDA.png){width=350}
 
 
 # Análisis Exploratorio de Datos (EDA) Univariado
@@ -133,38 +315,38 @@ La siguiente tabla muestra un resumen de la base de datos:
 \begin{table}[ht]
 \centering
 \resizebox{5.5cm}{!}{
-  \begin{tabular}{|l|l|l|}
+  \begin{tabular}{lll}
   \hline
   \textbf{Variable} & \textbf{Clase}  & \textbf{Descripción}   \\
   \hline
-  area & Factor & Área metropolitana \\ \hline
-        dpto & Factor & Departamento \\ \hline
-        sexo & Factor & Sexo al nacer \\ \hline
-        parent & Factor & Parentesco con el jefe o jefa del hogar \\ \hline
-        edad & Numérica & Años cumplidos \\ \hline
-        edu & Factor & Mayor nivel educativo alcanzado \\ \hline
-        ingreso & Numérica & Ingreso laboral \\ \hline
-        horas\_semana & Numérica & Horas trabajadas normalmente a la semana \\ \hline
-        cotiza & Factor & ¿Cotiza a un fondo de pensiones? \\ \hline
-        lugar & Factor & Lugar principal de trabajo \\ \hline
-        meses & Numérica & ¿Cuántos meses trabajó en los últimos 12 meses? \\ \hline
-        rama\_4 & Cadena & Rama de actividad CIIU REV 4 (4 dígitos) \\ \hline
-        rama\_2 & Cadena & Rama de actividad CIIU REV 4 (4 dígitos) \\ \hline
-        posic & Factor & Posición laboral \\ \hline
-        fondo & Factor & ¿A cuál fondo cotiza? \\ \hline
-        cambiar & Factor & ¿Desea cambiar su trabajo? \\ \hline
-        estable & Factor & ¿Considera que su empleo es estable? \\ \hline
-        t\_actual & Continua & ¿Cuánto tiempo lleva en su empleo actual? \\ \hline
-        t\_viaje & Continua & Tiempo de desplazamiento al trabajo \\ \hline
-        mas\_h & Continua & ¿Quiere trabajar más horas? \\ \hline
-        medio & Factor & Medio de transporte \\ \hline
-        sintrab & Factor & ¿Si no tuviera trabajo, de dónde obtendría sus recursos? \\ \hline
-        n\_comp & Factor & ¿Cuántas personas tiene la empresa donde trabajo? \\ \hline
-        srl & Factor & ¿Afiliación a ARL? \\ \hline
-        caja & Factor & ¿Afiliación a caja de compensación familiar? \\ \hline
-        actividad & Factor & Actividad económica recodificada \\ \hline
-        cotiza\_fondo & Factor & Fondo de pensiones recodificado \\ \hline
-        factor\_exp & Numérica & Factor de expansión \\ \hline
+  area & Factor & Área metropolitana \\ 
+        dpto & Factor & Departamento \\ 
+        sexo & Factor & Sexo al nacer \\ 
+        parent & Factor & Parentesco con el jefe o jefa del hogar \\ 
+        edad & Numérica & Años cumplidos \\
+        edu & Factor & Mayor nivel educativo alcanzado \\ 
+        ingreso & Numérica & Ingreso laboral \\ 
+        horas\_semana & Numérica & Horas trabajadas normalmente a la semana \\ 
+        cotiza & Factor & ¿Cotiza a un fondo de pensiones? \\ 
+        lugar & Factor & Lugar principal de trabajo \\ 
+        meses & Numérica & ¿Cuántos meses trabajó en los últimos 12 meses? \\ 
+        rama\_4 & Cadena & Rama de actividad CIIU REV 4 (4 dígitos) \\ 
+        rama\_2 & Cadena & Rama de actividad CIIU REV 4 (4 dígitos) \\ 
+        posic & Factor & Posición laboral \\ 
+        fondo & Factor & ¿A cuál fondo cotiza? \\ 
+        cambiar & Factor & ¿Desea cambiar su trabajo? \\ 
+        estable & Factor & ¿Considera que su empleo es estable? \\ 
+        t\_actual & Numérica & ¿Cuánto tiempo lleva en su empleo actual? \\ 
+        t\_viaje & Numérica & Tiempo de desplazamiento al trabajo \\ 
+        mas\_h & Factor & ¿Quiere trabajar más horas? \\ 
+        medio & Factor & Medio de transporte \\ 
+        sintrab & Factor & ¿Si no tuviera trabajo, de dónde obtendría sus recursos? \\ 
+        n\_comp & Factor & ¿Cuántas personas tiene la empresa donde trabajo? \\ 
+        srl & Factor & ¿Afiliación a ARL? \\ 
+        caja & Factor & ¿Afiliación a caja de compensación familiar? \\ 
+        actividad & Factor & Actividad económica recodificada \\ 
+        cotiza\_fondo & Factor & Fondo de pensiones recodificado \\ 
+        factor\_exp & Numérica & Factor de expansión \\ \hline\hline
   \end{tabular}
 }
 \label{tab:multicol}
@@ -233,7 +415,8 @@ kable(count_prop[,2:ncol(count_prop)], format = "latex", booktabs = T,
 
 ## Resumen de datos cualitativos (cont.):
 
-El siguiente panel muestra un resumen para las variables dicotómicas:
+Un panel de **gráficos circulares** es útil para presentar un resumen sobre las variables categóricas con un número menor de niveles. Considérese las siguientes variables
+
 
 ```{r, echo=F, eval = T}
 plot_dic <- readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_dic.rds")
@@ -246,14 +429,14 @@ plot_dic
 ## Resumen de datos cuantitativos
 
 
-
-
 ::: columns
 ::: {.column width="30%"}
 
+\bigskip
+
 #### Histograma
 
-El **Histograma** (**Figura X**) es una representación gráfica de los datos que muestra la frecuencia de los casos (valores) en categorías de datos (**Tabla 1**).
+El **Histograma** es una representación gráfica de los datos que muestra la frecuencia de los casos (valores) en categorías de datos (véase la tabla inferior).
 
 
 :::
@@ -273,7 +456,7 @@ ggplot(data = dataset) +
 :::
 
 ```{r, echo=FALSE, eval = T}
-count = dataset %>% count(cut_width(ingreso/1000, 1000, boundary = 0, dig.lab = 6),
+count = dataset %>% dplyr::count(cut_width(ingreso/1000, 1000, boundary = 0, dig.lab = 6),
                           name = "n") %>% t()
 colnames(count) = count[1,]
 count2 = as.data.frame(count[2,1:8]) %>% t()
@@ -284,11 +467,8 @@ kable(count2, col.names = NA, row.names = F, format = "latex", booktabs = T)
 
 ## Resumen de datos cuantitativos (cont.)
 
-Se presenta un análisis sobre la distribución de las demás variables cuantitativas
 
-
-
-```{r, echo = F, eval = T}
+```{r, echo = F, eval = T, , warning=F, prompt=FALSE, results = FALSE}
 hist_ds <- dataset[c("id", "edad",
                      "horas_semana", "t_actual",
                      "t_viaje")]
@@ -309,9 +489,9 @@ figure_3
 
 
 
-## Resumen de datos cuantitativos (cont.)
+## PDF y ECDF
 
-La **función de densidad empírica** $f(x)$ y la **función de distribución acumulada empírica** $F(x)$ son obtenidas mediante las funciones `density()` y  `ecdf()` del paquete `Stats`.
+La **función de densidad empírica** (PDF) $f(x)$ y la **función de distribución acumulada empírica** (ECDF) $F(x)$ son obtenidas mediante las funciones `density()` y  `ecdf()` del paquete `Stats`.
 
 
 ::: columns
@@ -324,6 +504,7 @@ ggplot(data = dataset, aes(x = edad)) +
   theme_bw() + labs(x = "Edad", y = "Density",
                     title = "Edad (años cumplidos)")
 ```
+
 
 :::
   
@@ -340,12 +521,14 @@ ggplot(data = dataset,
 :::
 :::
 
-## Resumen de datos cuantitativos (cont.)
+La función de densidad $f(x)$ satisface que $\int_{a}^{b}f(x)dx = P[a \leq X \leq b]$, donde $P[a \leq X \leq b]$ significa la probabilidad de que X se encuentre en el intervalo $a$ a $b$. Por definición, $F(x) = P(X \leq x)$.
+
+## Función de Distribución Acumulada Empírica
 
 Un ejercicio análogo es implementado para las demás variables cuantitativas. 
 
 
-```{r, echo=FALSE, eval = T, warning=F}
+```{r, echo=FALSE, eval = T, warning=F, fig.height=5, fig.align="center"}
 hist_ds <- dataset[c("id", "edad", "ingreso",
                      "horas_semana", "t_actual",
                      "t_viaje")]
@@ -372,14 +555,11 @@ figure_4
 #### Diagrama de caja
 El diagrama de caja es una representación gráfica de la distribución de los datos
 
-![Caption for the picture.](Figuras/boxplot_completo.png){width=250}
+![Construcción de un diagrama de caja](Figuras/boxplot_completo.png){width=250}
 
 ## Resumen de datos cuantitativos (cont.)
 
 La librería `StatDA()` proporciona una utilidad para representar la distribución y los principales elementos descriptivos de las variables continuas. 
-
-::: columns
-::: {.column width="55%"}
 
 ```{r, echo=T, eval = F}
 library(StatDA)
@@ -413,9 +593,7 @@ leg.txt <- c(paste0("Min. = ", round(min(dataset$edad),4)),
 legend (x=-3, y=0.028, bty="n", leg.txt)
 ```
 
-:::
-  
-::: {.column width="45%"}
+## Resumen de datos cuantitativos (cont.)
 
 ```{r, echo=FALSE, eval = T, warning=F, message=F}
 library(StatDA)
@@ -425,33 +603,24 @@ me = mean(dataset$edad)
 sd = sd(dataset$edad)
 
 StatDA::edaplot(dataset$edad, scatter=TRUE, H.freq=FALSE, box=TRUE, 
-                H.breaks=seq(0,100, by = 4),
-                H.col="lightgray", H.border=TRUE, H.labels=FALSE,
-                S.pch=1, S.col="blue", S.cex=0.5,
-                D.lwd=2, D.lty=1, D.plot=FALSE,
-                P.xlim=c(1, 91), P.cex.lab =1.2,
-                P.log=FALSE, P.main="Histogram, Density Plot, Scatterplot,
-	and Boxplot of Rate",
-                P.xlab="Edad (años)", P.plot=TRUE,
+                H.breaks=seq(0,100, by = 4), H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(1, 91), P.cex.lab =1.2, P.log=FALSE, P.main="Histogram, Density Plot, Scatterplot,
+	and Boxplot of Rate", P.xlab="Edad (años)", P.plot=TRUE,
                 P.ylab="Density",
                 B.pch=1,B.cex=0.5, B.col="red")
 lines(density(dataset$edad), lwd=2, col='blue')
 curve(dnorm(x, mean=me, sd=sd), from=0, to=100, add=T,
       col='red', lwd=3)
-leg.txt <- c(paste0("Min. = ", round(min(dataset$edad),4)),
-             paste0("Max. = ", round(max(dataset$edad),4)),
-             paste0("Mean = ", round(mean(dataset$edad),4)),
-             paste0("Median = ", round(median(dataset$edad),4)),
-             paste0("Std. dev. = ", round(sd(dataset$edad),4)),
-             paste0("Kurtosis = ", round(kurtosis(dataset$edad),4)),
-             paste0("Skewness = ", round(skewness(dataset$edad),4)))
+leg.txt <- c(paste0("Min. = ", round(min(dataset$edad),4)), paste0("Max. = ", round(max(dataset$edad),4)),
+             paste0("Mean = ", round(mean(dataset$edad),4)), paste0("Median = ", round(median(dataset$edad),4)),
+             paste0("Std. dev. = ", round(sd(dataset$edad),4)), paste0("Kurtosis = ", round(kurtosis(dataset$edad),4)), paste0("Skewness = ", round(skewness(dataset$edad),4)))
 legend (x=-3, y=0.028, bty="n", leg.txt)
 ```
 
-:::
-:::
 
 
+# Detección de valores atípicos
 
 ## Valores atípicos
 
@@ -492,44 +661,53 @@ $$
 
 donde $G = {max |x_{i} - \bar{x}|}/{\sigma}$
 
-## Criterio intercuartílico y criterio de Hair et al. (1999)
+## Criterio intercuartílico
+
+
+```{r, echo =F, eval = T, results = FALSE}
+# El mismo resultado se puede obtener manualmente
+Q1 <- quantile(dataset$ingreso, .25, na.rm = T)    # Cálculo de q0.25
+Q3 <- quantile(dataset$ingreso, .75, na.rm = T)    # Cálculo de q0.75
+IQR <- IQR(dataset$ingreso, na.rm = T)             # Cálculo del IQR (Q3-Q1)
+
+outliers1 <- dataset %>% filter(ingreso<(Q1 - 1.5*IQR) | ingreso>(Q3 + 1.5*IQR))
+
+# Identificación de los outliers en la gráfica
+plot(dataset$ingreso, type='p',
+     col=ifelse(dataset$ingreso %in% outliers1$ingreso, "red", "black"),
+     pch = ifelse(dataset$ingreso %in% outliers1$ingreso, 17, 1),
+     ylim = c(-5000000, 10000000),
+     ylab  = "Ingreso laboral")
+```
+
+
+## Criterio de valores estandarizados
 
 
 ::: columns
 ::: {.column width="50%"}
 
 ```{r, eval = T, echo=FALSE,message=F, warning=F, prompt=FALSE, results = FALSE}
-# Se propone el mismo ejercicio con otra variable: edad
-# Resumen descriptivo total
-library(janitor)
-dataset$ingreso2 = dataset$ingreso/1000
-
-# Definición de función Q2(Q1 - Q3)
-quantile_f <- function(x){
-  q1 <- quantile(x, na.rm = T, 0.25)
-  q2 <- quantile(x, na.rm = T, 0.5)
-  q3 <- quantile(x, na.rm = T, 0.75)
-  y <- paste0(round(as.numeric(q2), 1), " (",
-              round(as.numeric(q1), 2), " - ",
-              round(as.numeric(q3), 2), ")")
-  return(y)
+f_z <- function(x){
+  z <- (x-mean(x, na.rm = T))/sd(x, na.rm = T)
+  return(z)
 }
 
-cali <- dataset %>% filter(area == "Cali")
+# Definición del data frame con la variable estandarizada
+z <- data.frame(id = seq(1, nrow(dataset), by = 1),
+                x = dataset$ingreso,
+                z = f_z(dataset$ingreso))
 
-# Lo mismo puede ser obtenido manualmente
-Q1 <- quantile(cali$horas_semana, .25, na.rm = T)
-Q3 <- quantile(cali$horas_semana, .75, na.rm = T)
-IQR <- IQR(cali$horas_semana, na.rm = T)
+# Seguimos el criterio según el cual z > 4, en muestras grandes,
+# es considerado un valor atípico
+outliers1 <- z  %>% filter(abs(z) > 2.5)
+outliers2 <- z  %>% filter(abs(z) > 4)
 
-outliers <- cali %>% filter(horas_semana<(Q1 - 1.5*IQR) | horas_semana>(Q3 + 1.5*IQR))
+plot(dataset$ingreso, type='p',
+     col=ifelse(dataset$ingreso %in% outliers1$x, "red", "black"),
+     pch = ifelse(dataset$ingreso %in% outliers1$x, 17, 1))
+abline(h = min(outliers1$x), col="blue", lwd=3, lty=2)
 
-# Identificación de los outliers en la gráfica
-plot(cali$horas_semana, type='p',
-     col=ifelse(cali$horas_semana %in% outliers$horas_semana, "red", "black"),
-     pch = ifelse(cali$horas_semana %in% outliers$horas_semana, 17, 1),
-     ylim = c(0, 100),
-     main = "Detección univariante de outliers: criterio IQR")
 ```
 
 
@@ -538,24 +716,10 @@ plot(cali$horas_semana, type='p',
 ::: {.column width="50%"}
 
 ```{r, eval = T, echo=FALSE,message=F, warning=F, prompt=FALSE, results = FALSE}
-z <- data.frame(id = seq(1, nrow(cali), by = 1),
-                x = cali$horas_semana,
-                z = scale(cali$horas_semana))
-
-outliers1 <- z  %>% filter(abs(z) > 2.5)
-outliers2 <- z  %>% filter(abs(z) > 4)
-
-par(mfrow = c(1,2))
-plot(cali$horas_semana, type='p',
-     col=ifelse(cali$horas_semana %in% outliers1$x, "red", "black"),
-     pch = ifelse(cali$horas_semana %in% outliers1$x, 17, 16),
-     
-     main = "Criterio de Hair et al. (2019): z > 2.5")
-plot(cali$horas_semana, type='p',
-     col=ifelse(cali$horas_semana %in% outliers2$x, "red", "black"),
-     pch = ifelse(cali$horas_semana %in% outliers2$x, 17, 16),
-     
-     main = "Criterio de Hair et al. (2019): z > 4")
+plot(dataset$ingreso, type='p',
+     col=ifelse(dataset$ingreso %in% outliers2$x, "red", "black"),
+     pch = ifelse(dataset$ingreso %in% outliers2$x, 17, 1))
+abline(h = min(outliers2$x), col="blue", lwd=3, lty=2)
 ```
 
 
@@ -565,71 +729,86 @@ plot(cali$horas_semana, type='p',
 
 ## Resumen descriptivo: outliers y no-outliers
 
-```{r, echo=F, eval =T}
-# Resumen descriptivo total
-dataset_continuas = dataset[c("ingreso2",
-                                  "edad", "horas_semana",
-                                  "t_actual", "t_viaje")]
 
-melt_continuas <- melt(dataset_continuas)
 
-mean_f <- function(x){
-  return(mean(x, na.rm =T))
-}
-sd_f <- function(x){
-  return(sd(x, na.rm =T))
-}
-q1_f  <- function(x){
-  return(quantile(x, na.rm =T, 0.25))
-}
-q2_f  <- function(x){
-  return(quantile(x, na.rm =T, 0.5))
-}
-q3_f  <- function(x){
-  return(quantile(x, na.rm =T, 0.75))
-}
+```{r, eval = T, echo=FALSE,message=F, warning=F, prompt=FALSE, results = FALSE}
+# Regresemos al caso de los ingresos
+# Considérese el criterio de Hair et al. (2019)
 
-out_summary <- melt_continuas %>% dplyr::group_by(variable) %>% 
- summarise(across(everything(), list( 
-   mean = mean_f,
-   sd = sd_f,
-   q1 = q1_f,
-   q2 = q2_f,
-   q3 = q3_f)))
+# Definición del data frame con la variable estandarizada
+z <- data.frame(x = dataset$ingreso,
+                z = f_z(dataset$ingreso))
 
-out_summary$group = "outliers"
+# Seguimos el criterio según el cual z > 4, en muestras grandes,
+# es considerado un valor atípico
+outliers2 <- z  %>% filter(abs(z) > 4)
 
-no.outliers_summary <- out_summary
+# Eliminar valores NA
+# El tratamiento de los valores NA y su estudio
+# corresponden al tercer módulo del curso
+dataset <- dataset %>% filter(!is.na(ingreso))
 
-for (k in 1:5) {
-  df_1 = df_2 = dataset_continuas[,k]
-  df_2$z = as.vector(scale(df_1[,1]))
-  
-  df_2 = df_2 %>% filter(abs(z) <= 3)
-  
-  df_1$group = "outliers"
-  df_2$group = "no-outliers"
-  
-  df_2 = df_2[,c(1,3)]
-  colnames(df_2) = c("x", "group")
-  
-  no.outliers_summary$value_mean[k] = mean_f(df_2$x)
-  no.outliers_summary$value_sd[k] = sd_f(df_2$x)
-  no.outliers_summary$value_q1[k] = q1_f(df_2$x)
-  no.outliers_summary$value_q2[k] = q2_f(df_2$x)
-  no.outliers_summary$value_q3[k] = q3_f(df_2$x)
-}
+# Creación de base de datos sin outliers
+dataset_no <- dataset %>% filter(!ingreso %in% outliers2$x)
 
-no.outliers_summary$group = "no-outliers"
+# Comparación entre ambas distribuciones
 
-whole_out <- rbind(out_summary, no.outliers_summary)
 
-kable(whole_out[,1:6], format = "latex", booktabs = T,
-      col.names = c(" ", "Mean",
-                    "SD", "Q1", "Q2", "Q3")) %>% 
-  pack_rows(index = table(whole_out$group))
+par(mfrow = c(1,2))
+StatDA::edaplot(dataset$ingreso/1000, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(0,90000, by = 400),
+                H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,
+                D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(1, 20000), P.cex.lab =1.2,
+                P.log=FALSE, P.main="Histogram,
+                Density Plot, Scatterplot,
+	and Boxplot of Rate (outliers)",
+                P.xlab="Ingreso laboral (miles $)", P.plot=TRUE,
+                P.ylab="Density",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(dataset$ingreso/1000), lwd=2, col='blue')
+curve(dnorm(x, mean=mean(dataset$ingreso/1000, na.rm = T),
+            sd=sd(dataset$ingreso/1000, na.rm = T)), from=0, to=90000, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(dataset$ingreso/1000),4)),
+             paste0("Max. = ", round(max(dataset$ingreso/1000),4)),
+             paste0("Mean = ", round(mean(dataset$ingreso/1000),4)),
+             paste0("Median = ", round(median(dataset$ingreso/1000),4)),
+             paste0("Std. dev. = ", round(sd(dataset$ingreso/1000),4)),
+             paste0("Kurtosis = ", round(kurtosis(dataset$ingreso/1000),4)),
+             paste0("Skewness = ", round(skewness(dataset$ingreso/1000),4)))
+legend (x= 8000, y=0.0008, bty="n", leg.txt)
+
+StatDA::edaplot(dataset_no$ingreso/1000, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(0,90000, by = 400),
+                H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,
+                D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(1, 20000), P.cex.lab =1.2,
+                P.log=FALSE, P.main="Histogram,
+                Density Plot, Scatterplot,
+	and Boxplot of Rate (no-outliers)",
+                P.xlab="Ingreso laboral (miles $)", P.plot=TRUE,
+                P.ylab="Density",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(dataset_no$ingreso/1000), lwd=2, col='blue')
+curve(dnorm(x, mean=mean(dataset_no$ingreso/1000, na.rm = T),
+            sd=sd(dataset_no$ingreso/1000, na.rm = T)), from=0, to=90000, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(dataset_no$ingreso/1000),4)),
+             paste0("Max. = ", round(max(dataset_no$ingreso/1000),4)),
+             paste0("Mean = ", round(mean(dataset_no$ingreso/1000),4)),
+             paste0("Median = ", round(median(dataset_no$ingreso/1000),4)),
+             paste0("Std. dev. = ", round(sd(dataset_no$ingreso/1000),4)),
+             paste0("Kurtosis = ", round(kurtosis(dataset_no$ingreso/1000),4)),
+             paste0("Skewness = ", round(skewness(dataset_no$ingreso/1000),4)))
+legend (x=8000, y=0.0008, bty="n", leg.txt)
 
 ```
+
+
+
 
 
 ## Alternativas
@@ -648,6 +827,131 @@ Algunas alternativas para el tratamiento de valores atípicos son las siguientes
 
 - No todas las transformaciones conservan el sentido teórico de la escala original.
 
+
+## Transformaciones
+
+
+```{r, echo=FALSE, warning=FALSE}
+
+# Una práctica común sugiere que, cuando la interpretación de la variable
+# no está enteramente sujeta a la escala, una transformación puede
+# funcionar para suavizar la influencia de outliers
+
+# Outliers para log(x)
+z <- data.frame(x = log(dataset$ingreso),
+                z = f_z(log(dataset$ingreso)))
+
+# Seguimos el criterio según el cual z > 4, en muestras grandes,
+# es considerado un valor atípico
+outliers3 <- z  %>% filter(abs(z) > 3)
+
+plot(log(dataset$ingreso), type='p',
+     col=ifelse(log(dataset$ingreso) %in% outliers3$x, "red", "black"),
+     pch = ifelse(log(dataset$ingreso) %in% outliers3$x, 17, 1))
+abline(h = min(outliers3$x), col="blue", lwd=3, lty=2)
+
+```
+
+
+## Transformaciones
+
+
+```{r, echo=FALSE, warning=FALSE}
+
+# Considérese la transformación logarítmica
+dataset$log_ingreso <- log(dataset$ingreso)
+
+dataset_no <- dataset %>% filter(!log_ingreso %in% outliers3$x)
+
+# Comparación entre ambas distribuciones
+par(mfrow = c(1,2))
+StatDA::edaplot(dataset$log_ingreso, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(12,20, by = 0.1),
+                H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,
+                D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(12, 20), P.cex.lab =1.2,
+                P.log=FALSE, P.main="Histogram,
+                Density Plot, Scatterplot,
+	and Boxplot of Rate (outliers)",
+                P.xlab="Log Ingreso laboral", P.plot=TRUE,
+                P.ylab="Density",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(dataset$log_ingreso), lwd=2, col='blue')
+curve(dnorm(x, mean=mean(dataset$log_ingreso, na.rm = T),
+            sd=sd(dataset$log_ingreso, na.rm = T)), from=12, to=20, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(dataset$log_ingreso),4)),
+             paste0("Max. = ", round(max(dataset$log_ingreso),4)),
+             paste0("Mean = ", round(mean(dataset$log_ingreso),4)),
+             paste0("Median = ", round(median(dataset$log_ingreso),4)),
+             paste0("Std. dev. = ", round(sd(dataset$log_ingreso),4)),
+             paste0("Kurtosis = ", round(kurtosis(dataset$log_ingreso),4)),
+             paste0("Skewness = ", round(skewness(dataset$log_ingreso),4)))
+legend (x= 15, y=2, bty="n", leg.txt)
+
+StatDA::edaplot(dataset_no$log_ingreso, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(12,18, by = 0.1),
+                H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,
+                D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(12, 18), P.cex.lab =1.2,
+                P.log=FALSE, P.main="Histogram,
+                Density Plot, Scatterplot,
+	and Boxplot of Rate (no-outliers)",
+                P.xlab="Log Ingreso laboral", P.plot=TRUE,
+                P.ylab="Density",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(dataset_no$log_ingreso), lwd=2, col='blue')
+curve(dnorm(x, mean=mean(dataset_no$log_ingreso, na.rm = T),
+            sd=sd(dataset_no$log_ingreso, na.rm = T)), from=12, to=18, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(dataset_no$log_ingreso),4)),
+             paste0("Max. = ", round(max(dataset_no$log_ingreso),4)),
+             paste0("Mean = ", round(mean(dataset_no$log_ingreso),4)),
+             paste0("Median = ", round(median(dataset_no$log_ingreso),4)),
+             paste0("Std. dev. = ", round(sd(dataset_no$log_ingreso),4)),
+             paste0("Kurtosis = ", round(kurtosis(dataset_no$log_ingreso),4)),
+             paste0("Skewness = ", round(skewness(dataset_no$log_ingreso),4)))
+legend (x= 15, y=2, bty="n", leg.txt)
+
+```
+
+# Recursos alternativos
+
+
+- La librería `swirl` proporciona un tutorial sobre elementos básicos en R
+
+```{r, echo=TRUE, eval=FALSE}
+install.packages(“swirl”)
+library (swirl)
+swirl()
+```
+
+
+
+- Data wrangling with dplyr and tidyr (Cheat Sheet): [\textcolor{cyan}{Recurso 1.2}](https://github.com/sergiobarona03/Curso_EDA_2024_I/blob/main/Recursos%20alternativos/M%C3%B3dulo%201/Recurso12.pdf)
+
+- Visualización de datos usando ggplot2 (Guía Rápida): [\textcolor{cyan}{Recurso 1.3}](https://github.com/sergiobarona03/Curso_EDA_2024_I/blob/main/Recursos%20alternativos/M%C3%B3dulo%201/Recurso13.pdf)
+
+- Factors with forcats (Cheat Sheet): [\textcolor{cyan}{Recurso 1.4}](https://github.com/sergiobarona03/Curso_EDA_2024_I/blob/main/Recursos%20alternativos/M%C3%B3dulo%201/Recurso14.pdf)
+  
+  \end{itemize}
+  
+# Bibliografía de consulta
+  
+\begin{itemize}
+  
+\item{Wickham, H. (2016) GGplot2. Elegant Graphics for Data Analysis. Springer}
+  
+\item{Grolemund, G. (2014). Hands-On Programming with R. O’Reilly Media: Sebastopol, CA.}
+
+\item{Schutt, R. \& O’Neil, C. (2014). Doing Data Science. O’Reilly Media: Sebastopol, CA.}
+  
+\item{Wickham \& Grolemund, G. (2016). R for Data Science: Import, Tidy, Transform, Visualize, and Model Data. O’Reilly Media: Sebastopol, CA.}
+  
+\end{itemize}
+  
 
 # Pruebas diagnóstico
 
@@ -975,16 +1279,24 @@ qqPlot((df$t_viaje)^(1/3), main = "Crt Tiempo de desplazamiento", ylab = " ")
 
 ```{r, eval = T, echo=FALSE,message=F, warning=F}
 
+quantile_f <- function(x){
+  q1 <- quantile(x, na.rm = T, 0.25)
+  q2 <- quantile(x, na.rm = T, 0.5)
+  q3 <- quantile(x, na.rm = T, 0.75)
+  y <- paste0(round(as.numeric(q2), 1), " (",
+              round(as.numeric(q1), 2), " - ",
+              round(as.numeric(q3), 2), ")")
+  return(y)
+}
 
-
-total <- dataset %>% dplyr::select(ingreso2,
+total <- dataset %>% dplyr::select(ingreso,
                                     edad, horas_semana,
                                     t_actual, t_viaje) %>% 
-  summarise(across(everything(),
+  dplyr::summarise(across(everything(),
                    ~ quantile_f(.x)))
 
 q_total <- data.frame(area = "Total",
-                      ingreso2_sum = total$ingreso2,
+                      ingreso_sum = total$ingreso,
                       edad_sum = total$edad,
                       horas_semana_sum = total$horas_semana,
                       t_actual_sum = total$t_actual,
@@ -992,8 +1304,8 @@ q_total <- data.frame(area = "Total",
 
 # Resumen descriptivo por grupos
 q_group <- dataset %>%
-  group_by(area) %>%
-  summarise(across(c("ingreso2",
+  dplyr::group_by(area) %>%
+  dplyr::summarise(across(c("ingreso",
                      "edad", "horas_semana",
                      "t_actual", "t_viaje"),
                    list(sum = quantile_f))) %>% as.data.frame() 

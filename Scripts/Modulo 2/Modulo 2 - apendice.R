@@ -101,7 +101,7 @@ figure_1 <- ggplot(plot_cat, aes(reorder(categories, -n), perc,
   scale_x_discrete(label = function(x) stringr::str_trunc(x, 15)) +
   theme(axis.text.x = element_text(angle=50, hjust=1)) + guides(fill="none",
                                                                 col = "none")
-saveRDS(figure_1, "Módulos/Módulo 2/Figuras/plot_cat.rds")
+saveRDS(figure_1, "C:/Users/Portatil/Desktop/FIGURAS_M2/plot_cat.rds")
 
 
 # Un resumen de las variables categóricas se puede obtener así
@@ -206,7 +206,7 @@ sex_figure <- ggplot(sexo, aes(x = " ", n,
 
 plot_dic2 <- ggarrange(sex_figure, figure_2, ncol = 2, nrow = 1)
 
-saveRDS(plot_dic2, "Módulos/Módulo 2/Figuras/plot_dic.rds")
+saveRDS(plot_dic2, "C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_dic.rds")
 
 #-----------------#
 # Otros gráficos  #
