@@ -14,7 +14,7 @@ header-includes:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE, message = FALSE)
 def.chunk.hook  <- knitr::knit_hooks$get("chunk")
 knitr::knit_hooks$set(chunk = function(x, options) {
   x <- def.chunk.hook(x, options)
@@ -31,6 +31,8 @@ library (kableExtra)
 library(plyr)
 library(tidyverse)
 library(reshape2)
+library(corrplot)
+library(psych)
 ```
 
 # Recordatorio: sintaxis de ggplot2
@@ -163,6 +165,8 @@ Para importar la base de datos (.xlsx),
 ```{r, echo=T, eval=F}
 library(readxl)
 dataset <- readxl::read_excel("Datos/Formatos/geih_dataset.xlsx")
+cont_ds <- dataset %>% dplyr::select(ingreso, edad, horas_semana, t_actual)
+cont_ds <- cont_ds %>% dplyr::filter(t_actual > 0)
 ```
 La siguiente tabla muestra un resumen de la base de datos:
 \begin{table}[ht]
@@ -228,7 +232,7 @@ Considérese las siguientes variables cualitativas previamente recodificadas:
 ::: {.column width="70%"}
 
 ```{r, echo=F, eval = T}
-plot_cat <- readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_cat.rds")
+plot_cat <- readRDS("C:/Users/PC/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_cat.rds")
 ```
 
 
@@ -243,7 +247,7 @@ plot_cat
 Idéntica información puede ser representada mediante el siguiente resumen:
 
 ```{r, echo=F, eval = T}
-count_prop <- tibble(readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/count_prop.rds"))
+count_prop <- tibble(readRDS("C:/Users/PC/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/count_prop.rds"))
 
 count_prop <- count_prop %>% dplyr::filter(!is.na(value))
 count_prop <- count_prop %>% dplyr::filter(name %in% c("actividad",
@@ -274,7 +278,7 @@ Un panel de **gráficos circulares** es útil para presentar un resumen sobre la
 
 
 ```{r, echo=F, eval = T}
-plot_dic <- readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_dic.rds")
+plot_dic <- readRDS("C:/Users/PC/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_dic.rds")
 ```
 ```{r, echo=F, eval = T, fig.height=5, fig.align="center"}
 plot_dic
@@ -471,11 +475,11 @@ legend (x=-3, y=0.028, bty="n", leg.txt)
 
 # Análisis exploratorio multivariante
 
-## Independencia de variables catégoricas
+## Independencia de variables categóricas
 
 La siguiente gráfica representa la asociación entre el nivel educativo máximo alcanzado por el trabajador (**educación**) y el área metropolitana en que reside. 
 
-```{r, echo = F, eval = T, fig.width= 7, fig.height=4}
+```{r, echo = F, eval = T, fig.width= 10, fig.height=5}
 ggplot(dataset,
        aes(x = factor(edu),
            fill = factor(edu))) + 
@@ -498,12 +502,11 @@ ggplot(dataset,
 
 ```
 
-
 ## Tabla de contingencia
 
 La **tabla de contingencia** permite resumir la información reportada en la figura anterior:
 
-
+\resizebox{9.5cm}{!}{
 ```{r, echo = F, eval = T}
 con1 <- table(dataset$area,dataset$edu)
 con2 <- addmargins(con1)
@@ -511,20 +514,28 @@ con2 <- addmargins(con1)
 kable(con2, format = "latex",
                   booktabs = T)
 ```
-
+}
 
 ::: columns
 ::: {.column width="50%"}
 
+\bigskip
+
+\bigskip
+
 La **prueba $\chi^{2}$ de independencia** permite determinar si dos variables asociadas a **una muestra** son independientes o no.
 
 $$
-H_{0}: \text{Las dos var}
+H_{0}: \text{Las dos variables son independientes}
 $$
 
 :::
   
 ::: {.column width="50%"}
+
+\bigskip
+
+\bigskip
 
 ```{r, echo = F, eval = T, warning=FALSE}
 chisq.test(dataset$area, dataset$edu)
@@ -536,13 +547,18 @@ chisq.test(dataset$area, dataset$edu)
 
 ## Tabla de contingencia (cont.)
 
-```{r, echo = F, eval = T}
-mosaicplot(con1, las = 2, shade = T)
-```
+Los **gráficos de mosaico** proporcionan una visualización sobre las tablas de contigencia:
 
+```{r, echo = F, eval = T, fig.height = 7, fig.width= 10}
+mosaicplot(con1, las = 2, shade = T,
+           main = "Nivel de educación máximo y área metropolitana")
+```
 
 ## Resumen: independencia de variables categóricas
 
+Usando tablas de contingencia, un análisis análogo es implementado para las variables categóricas restantes:
+
+\resizebox{10cm}{!}{
 ```{r, echo = F, eval = T}
 df = data.frame(matrix(NA, nrow = 10, ncol = 10))
 colnames(df) = c("edu","parent",
@@ -589,13 +605,13 @@ x = reshape2::dcast(chi_2[c("V1", "V2", "value")],
 
 kableExtra::kable(x, format = "latex", booktabs = T)
 ```
-
+}
 
 ## Resumen: independencia de variables categóricas
 
-La siguiente es una forma útil de incluir la prueba $\chi^{2}$ de independencia en la visualización de los datos:
+Una forma alternativa de presentar los resultados sobre la independencia de variables categóricas a través de un gráfico:
 
-```{r, echo = F, eval = T}
+```{r, echo = F, eval = T, fig.height=7, fig.width= 12}
 library(ggpubr)
 
 dataset$medio = fct_lump_n(factor(dataset$medio), 5)
@@ -608,7 +624,7 @@ p.value <- chisq.test(dataset$sexo, dataset$medio)$p.value
 f1 <- ggplot(edu_fondo, aes(x = sexo, y = perc,
                   fill = fct_reorder(medio, perc)) ) +
   geom_bar(stat = "identity", position = "dodge") + 
-  annotate("text", x=1, y=13, label=paste0("Chi-2 test, p-value: ", signif(p.value,4))) +
+  annotate("text", x=1, y=35, label=paste0("Chi-2 test, p-value: ", signif(p.value,4))) +
   theme_bw() + scale_fill_brewer(palette = "PuOr") +
   labs(x = "Sexo", y = "Participación (%)",
        fill = "Medio")
@@ -621,7 +637,7 @@ sp <- dataset %>% dplyr::count(sexo, posic) %>%
 f2 <- ggplot(sp, aes(x = sexo, y = perc,
                       fill = fct_reorder(posic, perc)) ) +
   geom_bar(stat = "identity", position = "dodge") + 
-  annotate("text", x=1, y=28, label=paste0("Chi-2 test, p-value: ", signif(p.value,4))) +
+  annotate("text", x=1.5, y=60, label=paste0("Chi-2 test, p-value: ", signif(p.value,4))) +
   theme_bw() + scale_fill_brewer(palette = "PuOr") +
   labs(x = "Sexo", y = "Participación (%)",
        fill = "Puesto laboral")
@@ -629,6 +645,331 @@ f2 <- ggplot(sp, aes(x = sexo, y = perc,
 ggarrange(f1, f2, ncol = 2)
 
 ```
+
+
+## Diferencias en variables continuas
+
+La **prueba de Kruskal-Wallis** es un prueba no-paramétrica cuyo objetivo es determinar si todas las $k$ poblaciones son idénticas o si al menos una de las poblaciones proporciona observaciones distintas a las poblaciones restantes. Así:
+
+$$
+H_{0}: \text{No hay diferencia entre las k poblaciones}
+$$
+
+```{r, echo = F, eval = T, warning=FALSE, fig.width= 13, fig.height=6}
+dataset$ingreso2 = dataset$ingreso/1000
+
+# Ingreso laboral según el nivel educativo
+ggboxplot(dataset, x = "edu", y = "ingreso2",
+          color = "edu", palette = "jco",
+          outlier.shape = NA)+
+  stat_compare_means() + ylim(c(0, 6000)) +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = "Ingreso laboral (miles $) según el nivel educativo",
+       y = "Ingreso (miles $)", x = "",
+       color = "Nivel")
+```
+
+
+## Diferencias en variables continuas (cont.)
+
+Nótese que la **prueba de Wilcoxon** puede ser usada con el mismo propósito cuando $k = 2$, es decir, para considerar pares de poblaciones.
+
+
+```{r, echo = F, eval = T, warning=FALSE, fig.width= 10, fig.height=6}
+comparisons <- list( c("Maestría", "Doctorado"),
+                     c("Secundaria", "Maestría"),
+                     c("Primaria", "Secundaria") )
+
+ggboxplot(dataset, x = "edu", y = "ingreso2",
+          color = "edu", palette = "jco",
+          outlier.shape = NA) + 
+  stat_compare_means(comparisons = comparisons, 
+                     label.y = c(10000, 11000, 12000),
+                     bracket.size = 0.2,
+                     label =  "p.signif") + 
+  stat_compare_means(label.y = 11000)  +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = "Ingreso laboral (miles $) según el nivel educativo",
+       y = "Ingreso (miles $)", x = "",
+       color = "Nivel") + ylim(c(0,18000))
+```
+
+## Diferencias en variables continuas (cont.)
+
+Un ejercicio análogo es realizado después de incluir otra variable categórica:
+
+
+```{r, echo = F, eval = T, warning=FALSE, fig.width= 10, fig.height=6}
+comparisons <- list( c("Maestría", "Doctorado"),
+                     c("Secundaria", "Maestría"),
+                     c("Primaria", "Secundaria") )
+
+ggboxplot(dataset, x = "edu", y = "ingreso2",
+          color = "edu", palette = "jco",
+          facet.by = "sexo",
+          outlier.shape = NA) + 
+  stat_compare_means(comparisons = comparisons, 
+                     label.y = c(10000, 11000, 12000),
+                     bracket.size = 0.2,
+                     label =  "p.signif") + 
+  stat_compare_means(label.y = 11000,
+                     label.x = 2)  +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank()) +
+  labs(title = "Ingreso laboral (miles $) según el nivel educativo",
+       y = "Ingreso (miles $)", x = "",
+       color = "Nivel") + ylim(c(0,18000))
+```
+
+## Resumen: diferencias en variables continuas según variables categóricas
+
+El análisis puede ser extendido a todas las variables (continuas y categóricas) incluidas en la base de datos: 
+
+```{r, echo= F, eval = T}
+lista_kruskal = list(area = data.frame(),
+                     sexo = data.frame(),
+                     parent = data.frame(),
+                     edu = data.frame(),
+                     lugar = data.frame(),
+                     medio = data.frame(),
+                     cotiza_fondo = data.frame(),
+                     actividad = data.frame())
+
+categoricas = c("area", "sexo", "parent", "edu", "lugar",
+                "medio", "cotiza_fondo", "actividad")
+
+continuas = c("ingreso", "edad","horas_semana", "t_actual",
+              "t_viaje")
+
+data_kruskal = dataset[c("id", categoricas, continuas)]
+
+hipotesis = continuas
+
+for (i in categoricas) {
+  item_cat = which(names(lista_kruskal) ==i)
+  lista_kruskal[[item_cat]] = data.frame(Variables = hipotesis,
+                                         Chi_2 = rep(NA, length(hipotesis)),
+                                         p = rep(NA, length(hipotesis)))
+  
+  for (j in hipotesis) {
+    item_hyp = which(lista_kruskal[[item_cat]]$Variables == j )  
+    
+    kruskal_aux = data_kruskal[c(j,i)] 
+    colnames(kruskal_aux) = c("continua", "discreta")
+    kruskal_aux$continua = as.numeric(kruskal_aux$continua)
+    kruskal_aux$discreta = as.factor(kruskal_aux$discreta)
+    kruskal_test_aux = kruskal.test(kruskal_aux$continua~kruskal_aux$discreta)
+    lista_kruskal[[item_cat]]$Chi_2[item_hyp] = paste0(round(kruskal_test_aux$statistic, digits = 1),
+                                                       " (",
+                                                       kruskal_test_aux$parameter
+                                                       , ")")
+    
+    lista_kruskal[[item_cat]]$p[item_hyp]  = round(kruskal_test_aux$p.value, digits = 2)
+  }
+  
+  colnames(lista_kruskal[[item_cat]]) = c("Variables", 
+                                          paste0(i,"_Chi_2"),
+                                          paste0(i,"_p"))
+}
+
+# Resultados generales
+kruskal = merge(lista_kruskal[[1]], lista_kruskal[[2]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[3]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[4]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[5]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[6]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[7]], by = "Variables")
+kruskal = merge(kruskal, lista_kruskal[[8]], by = "Variables")
+
+kruskal1 <- kruskal[c(1, 2,4,6,8,10,12,14,16)]
+kruskal2 <- kruskal[c(1, 3,5,7,11,13,15,17)]
+```
+
+
+\centering
+\resizebox{11cm}{!}{ 
+
+```{r, echo=F, eval = T}
+kable(kruskal1, format = "latex", booktabs = T, col.names = c(" ","area",
+                                                              "sexo", "parent",
+                                                              "edu", "lugar",
+                                                              "medio", "fondo", "actividad"))
+```
+
+}
+
+
+\centering
+\resizebox{11cm}{!}{ 
+
+```{r, echo=F, eval = T}
+kable(kruskal1, format = "latex", booktabs = T, col.names = c(" ","area",
+                                                              "sexo", "parent",
+                                                              "edu", "lugar",
+                                                              "medio", "fondo", "actividad"))
+```
+
+}
+
+
+## Covariación en variables continuas
+
+```{r, echo=F, eval=T, fig.width=8, fig.height=5}
+ggplot(data = dataset) +
+  geom_point(mapping = aes(x = edad,
+                           y = ingreso/1000,
+                           col = sexo)) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(4,"Blues")[3:4]) 
+```
+
+
+## Covariación con múltiples variables continuas
+
+```{r, echo=F, eval=T,fig.width=8, fig.height=5}
+cont_ds <- dataset %>% select(ingreso, edad, horas_semana, t_actual)
+cont_ds <- cont_ds %>% dplyr::filter(t_actual > 0)
+pairs(cont_ds, 
+      main = "Diagrama de dispersión sobre las variables continuas",
+      col = RColorBrewer::brewer.pal(4,"Blues")) 
+```
+
+
+## Ajuste con múltiples variables continuas
+
+```{r, echo=F, eval=T,fig.width=14, fig.height=8}
+ggplot(dataset, aes(edad, log(ingreso))) + 
+  geom_point() + 
+  geom_smooth(method = "lm", 
+              se = TRUE) +
+  facet_wrap(~edu)
+```
+
+## Correlación lineal simple
+
+
+
+::: columns
+::: {.column width="30%"}
+
+\bigskip
+
+\bigskip
+
+El **coeficiente de correlación simple** es una medida sobre la intensidad de la relación lineal entre dos variables cuantitativas.
+
+```{r, echo=F, eval=T}
+
+cor_ds <- cor(cont_ds,  use = "complete.obs")
+(round(cor_ds,2))
+```
+
+
+:::
+  
+::: {.column width="70%"}
+
+\bigskip
+
+```{r, echo=F, eval=T}
+corrplot(cor_ds, method="circle")
+```
+
+:::
+:::
+
+## Correlación sobre variables transformadas
+
+El **coeficiente de correlación** es calculado, adicionalmente, considerando sobre la variable **ingreso** y las variables continuas restantes. 
+
+```{r, echo=F, eval = T,fig.width=14, fig.height=8}
+
+cont_ds <- cont_ds %>% filter(t_actual > 0)
+corr1 = cor(cont_ds[,-1], 
+            cont_ds$ingreso, use = "complete.obs") %>% as.data.frame() %>% rownames_to_column(var = "variable")
+
+corr2 = cor(cont_ds[,-1], 
+            log(cont_ds$ingreso), use = "complete.obs") %>% as.data.frame() %>% rownames_to_column(var = "variable")
+
+
+corr3 = cor(log(cont_ds[,-1]), 
+            log(cont_ds$ingreso), use = "complete.obs") %>% as.data.frame() %>% rownames_to_column(var = "variable")
+
+plot.corr1 = ggplot(corr1, aes(x = variable,
+                               y = V1, fill = V1)) +
+  geom_bar(stat = "identity") + theme_classic() +
+  labs(x = "Variable", y = "Corr", title = "lin-lin",
+       fill = "") +
+  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1)) +
+  ylim(-0.2, 0.2) + geom_hline(yintercept=0, 
+                color = "black", size=0.5) +
+  scale_fill_viridis_c(option = "magma", direction = -1) 
+
+plot.corr2 = ggplot(corr2, aes(x = variable,
+                               y = V1, fill = V1)) +
+  geom_bar(stat = "identity") + theme_classic() +
+  labs(x = "Variable", y = "Corr", title = "log-lin",
+       fill = "") +
+  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1)) +
+  ylim(-0.2, 0.2) + geom_hline(yintercept=0, 
+                color = "black", size=0.5) +
+  scale_fill_viridis_c(option = "magma", direction = -1)
+
+plot.corr3 = ggplot(corr3, aes(x = variable,
+                               y = V1, fill = V1)) +
+  geom_bar(stat = "identity") + theme_classic() +
+  labs(x = "Variable", y = "Corr", title = "log-log",
+       fill = "") +
+  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1))+
+  ylim(-0.2, 0.2) + geom_hline(yintercept=0, 
+                color = "black", size=0.5) +
+  scale_fill_viridis_c(option = "magma", direction = -1)
+
+
+ggarrange(plot.corr1,
+          plot.corr2,
+          plot.corr3, ncol = 3,nrow = 1)
+```
+
+## Resumen sobre variables continuas: psych()
+
+::: columns
+::: {.column width="40%"}
+
+\bigskip
+
+\bigskip
+
+La función `pairs.panels()` de la librería `psych()` proporciona el siguiente resumen: **diagramas de dispersión y ajuste lineal** (bajo la diagonal principal); el **coeficiente de correlación de Pearson** (sobre la diagonal principal) y los **histogramas** para cada variable continua (en la diagonal principal).
+
+:::
+  
+::: {.column width="60%"}
+
+
+```{r,  echo=F, eval = T}
+library(psych)
+
+pairs.panels(cont_ds, main = "Variables continuas en la base de datos GEIH 2023",
+             density = TRUE,
+             ellipses = FALSE,
+             pch = 20,
+             lm  = TRUE,
+             method = "pearson",
+             hist.col = "lightskyblue",
+             ci = TRUE)
+```
+:::
+:::
+
+
 
 
 # Detección univariante de valores atípicos
@@ -958,6 +1299,9 @@ swirl()
 \item{Aldás J. \& Uriel, E. (2017). Análisis multivariante aplicado con R. Madrid: Ediciones Paraninfo}
   
 \end{itemize}
+
+
+
 
 
 

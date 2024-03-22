@@ -11,7 +11,7 @@ library(tidyverse)
 #----------------------#
 # Cargar base de datos #-------------------------------------------------------------------------------------------------------------------------
 #----------------------#
-setwd("C:/Users/Portatil/Desktop/Curso_EDA_2024_I")
+setwd("C:/Users/PC/Desktop/Curso_EDA_2024_I")
 dataset <- readxl::read_excel("Datos/Formatos/geih_dataset.xlsx")
 
 #--------------------------------------------------------#
@@ -731,12 +731,12 @@ kruskal = merge(kruskal, lista_kruskal[[6]], by = "Variables")
 kruskal = merge(kruskal, lista_kruskal[[7]], by = "Variables")
 kruskal = merge(kruskal, lista_kruskal[[8]], by = "Variables")
 
+
+
 #-----------------------------#
 # Dos variables continuas     #-------------------------------------------------------------------------------------------------------------------------
 #-----------------------------#
 
-pairs(mtcars[, c(1, 3:6)],
-      main = "Scatter Plot Matrix for mtcars Dataset")
 
 # La aproximación básica es un scatter plot:
 ggplot(data = dataset) +
@@ -801,57 +801,63 @@ pairs(cont_ds,
       col = RColorBrewer::brewer.pal(4,"Blues"))
 
 # Matriz de correlación para múltiples variables
-library(corr)
+library(corrplot)
 
   
-cor_ds <- cor(cont_ds)
-head(round(cor_ds,2))
+cor_ds <- cor(cont_ds,  use = "complete.obs")
+(round(cor_ds,2))
 
 # visualizing correlogram
 # as circle
 corrplot(cor_ds, method="circle")
 
 # as pie
-corrplot(M, method="pie")
+corrplot(cor_ds, method="pie")
 
 # as colour
-corrplot(M, method="color")
+corrplot(cor_ds, method="color")
 
 # as number
-corrplot(M, method="number")
+corrplot(cor_ds, method="number")
 
 # Correlación sobre las variables transformadas
+library(ggpubr)
+library(tidyverse)
 
-
+cont_ds <- cont_ds %>% filter(t_actual > 0)
 corr1 = cor(cont_ds[,-1], 
-            cont_ds$ingreso) %>% as.data.frame() %>% rownames_to_column(var = "variable")
+            cont_ds$ingreso, use = "complete.obs") %>% as.data.frame() %>% rownames_to_column(var = "variable")
 
 corr2 = cor(cont_ds[,-1], 
-            log(cont_ds$ingreso))%>% as.data.frame() %>% rownames_to_column(var = "variable")
+            log(cont_ds$ingreso), use = "complete.obs") %>% as.data.frame() %>% rownames_to_column(var = "variable")
+
 
 corr3 = cor(log(cont_ds[,-1]), 
-            log(cont_ds$ingreso)) %>% as.data.frame() %>% rownames_to_column(var = "variable")
+            log(cont_ds$ingreso), use = "complete.obs") %>% as.data.frame() %>% rownames_to_column(var = "variable")
 
 plot.corr1 = ggplot(corr1, aes(x = variable,
                                y = V1, fill = V1)) +
   geom_bar(stat = "identity") + theme_classic() +
   labs(x = "Variable", y = "Corr", title = "lin-lin",
        fill = "") +
-  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1))
+  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1)) +
+  scale_fill_viridis_c(option = "magma", direction = -1)
 
 plot.corr2 = ggplot(corr2, aes(x = variable,
                                y = V1, fill = V1)) +
   geom_bar(stat = "identity") + theme_classic() +
   labs(x = "Variable", y = "Corr", title = "log-lin",
        fill = "") +
-  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1)) 
+  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1)) +
+  scale_fill_viridis_c(option = "magma", direction = -1)
 
 plot.corr3 = ggplot(corr3, aes(x = variable,
                                y = V1, fill = V1)) +
   geom_bar(stat = "identity") + theme_classic() +
   labs(x = "Variable", y = "Corr", title = "log-log",
        fill = "") +
-  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1))
+  theme(axis.text.x = element_text(angle = 60, vjust = 1.1, hjust=1))+
+  scale_fill_viridis_c(option = "magma", direction = -1)
 
 
 ggarrange(plot.corr1,
@@ -861,7 +867,14 @@ ggarrange(plot.corr1,
 # El paquete psych
 library(psych)
 
-pairs.panels(cont_ds, main = "Scatter Plot Matrix for mtcars Dataset")
+pairs.panels(cont_ds, main = "Variables continuas en la base de datos GEIH 2023",
+             density = TRUE,
+             ellipses = FALSE,
+             pch = 20,
+             lm  = TRUE,
+             method = "pearson",
+             hist.col = "lightskyblue",
+             ci = TRUE)
 
 
 #-----------------------------------------------------------#
