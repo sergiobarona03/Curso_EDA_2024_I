@@ -1,6 +1,6 @@
 ---
 title: 'Introducción al Análisis Exploratorio de Datos (EDA) en R'
-subtitle: 'Módulo 2'
+subtitle: 'Módulo 3'
 fontsize: 8 pt
 output:
   beamer_presentation:
@@ -33,376 +33,443 @@ library(tidyverse)
 library(reshape2)
 ```
 
-# Continuación de EDA univariante: supuestos
+# Recordatorio: sintaxis de ggplot2
 
-## Distribución normal univariada
+El paquete **ggplot2** proporciona un sistema coherente para visualizar datos y crear gráficos. La versatilidad de **ggplot2** radica en el uso de la Gramática de Gráficos (*Grammar of Graphics*).
+
+```{r, eval =F, echo=T}
+ggplot(dataset, aes()) + geometría + faceta + opciones
+```
+
+donde:
+  
+\begin{enumerate}
+
+\item{\textit{dataset} es un data frame}
+
+\item{Las características del mapa \textbf{aes()} describe los ejes $(x,y)$, el color exterior (\textbf{color} o \textbf{colour}), el color interior (\textbf{fill}), la forma de los puntos (\textbf{shape}), el tipo de línea (\textbf{linetype}) y el tamaño (\textbf{size})}
+
+\item{Los objetos geométricos (\textbf{geometría}) determinan el tipo de gráfico:
+    
+  \begin{itemize}
+  
+  \item{Puntos ($geom\_point$)}
+  \item{Líneas ($geom\_lines$)}
+  \item{Histogramas ($geom\_histogram$)}
+  \item{Boxplot ($geom\_boxplot$)}
+  
+  \end{itemize}
+}
+
+\item{La \textbf{faceta} permite dividir un gráfico en múltiples gráficos de acuerdo con grupos}
+
+
+
+\end{enumerate}
+
+
+# Introducción al EDA
+
+## ¿Qué es el EDA?
 
 ::: columns
-::: {.column width="50%"}
+::: {.column width="60%"}
 
-Una variable aleatoria continua $X$ está normalmente distribuida si su **función de densidad** sigue la forma:
+\bigskip
 
-$$
-f(x) = \frac{1}{\sigma  \sqrt{2\pi}}exp\left\{\frac{-1}{2\sigma^{2}}(x - \mu)^{2}\right\}
-$$
-donde
+\bigskip
 
-$$
-f(x) \geq 0
-$$
-$$
-\int_{-\infty}^{\infty} f(x)dx = 1
-$$
+\bigskip
 
-$$
-\int_{a}^{b} f(x)dx = P(a \leq x \leq b)
-$$
+El Análisis Exploratorio de Datos (EDA, por sus siglas en inglés) proporciona una estrategia robusta para ampliar el entendimiento sobre los datos. El principio general es el siguiente:
 
-**Parámetros de la distribución:** media($\mu$) y varianza ($\sigma^{2}$) de la distribución.
+\bigskip
+
+#### 
+
+“Es importante comprender lo que podemos hacer antes de aprender a medir lo bien que parece que lo hemos hecho” \textcolor{cyan}{(Tukey, 1977)}.
 
 :::
   
-::: {.column width="50%"}
-
-\bigskip
-
-\bigskip
-
-![Áreas bajo la curva normal](Figuras/theo_normal.png)
-
+::: {.column width="40%"}
+![Tukey (1977). Exploratory Data Analysis](Figuras/Tukey.jpg)
 :::
 :::
 
 
-## Normalidad univariada 
+## Utilidad
 
-El gráfico **cuantil-cuantil** (gráfico Q-Q) compara dos distribuciones de probabilidad usando sus cuantiles. Usando la librería `car`, comparamos la distribución de probabilidad de una muestra aleatoria con la distribución normal. 
+Mediante métodos gráficos y descriptivos, el EDA permite \textcolor{cyan}{(Carranza, 2021)}:
 
-```{r, echo=F, eval = T, message=F, warning=F, prompt=FALSE, results = FALSE}
+- Revelar la estructura de los datos
 
+- Determinar las variables relevantes
+- Determinar valores atípicos
+- Proponer hipótesis
+- Proponer estrategias para la modelación
+
+## EDA y CDA
+![Análisis Exploratorio de Datos (EDA) y Análisis Confirmatorio de Datos (CDA)](Figuras/EDA_CDA.png){width=350}
+
+
+# Análisis exploratorio univariante
+
+## Base de datos
+
+La base de datos usada es extraída de los microdatos de la \textbf{Gran Encuesta Integrada de Hogares (GEIH)} para diciembre de 2023. El análisis considera las siguientes 13 ciudades y áreas metropolitanas:
+
+::: columns
+::: {.column width="30%"}
+
+- Medellín A.M.
+- Barranquilla A.M.
+- Bogotá
+- Cartagena
+- Manizales A.M.
+
+
+:::
+  
+::: {.column width="30%"}
+
+- Monteria
+- Villavicencio
+- Pasto
+- Cucuta A.M.
+- Pereira A.M.
+
+:::
+
+::: {.column width="30%"}
+
+- Pereira A.M.
+- Bucaramanga A.M.
+- Ibague 
+- Cali A.M
+:::
+:::
+
+\bigskip
+
+La información es extraída de dos módulos de la GEIH:
+
+- **Ocupados** (horas trabajadas , ingreso laboral, actividad económica, etc.)
+- **Características generales, seguridad social en salud y educación** (edad, sexo, nivel de educación, etc.)
+
+
+## Base de datos (cont.)
+
+Para importar la base de datos (.xlsx),
+```{r, echo=T, eval=F}
+library(readxl)
+dataset <- readxl::read_excel("Datos/Formatos/geih_dataset.xlsx")
+```
+La siguiente tabla muestra un resumen de la base de datos:
+\begin{table}[ht]
+\centering
+\resizebox{5.5cm}{!}{
+  \begin{tabular}{lll}
+  \hline
+  \textbf{Variable} & \textbf{Clase}  & \textbf{Descripción}   \\
+  \hline
+  area & Factor & Área metropolitana \\ 
+        dpto & Factor & Departamento \\ 
+        sexo & Factor & Sexo al nacer \\ 
+        parent & Factor & Parentesco con el jefe o jefa del hogar \\ 
+        edad & Numérica & Años cumplidos \\
+        edu & Factor & Mayor nivel educativo alcanzado \\ 
+        ingreso & Numérica & Ingreso laboral \\ 
+        horas\_semana & Numérica & Horas trabajadas normalmente a la semana \\ 
+        cotiza & Factor & ¿Cotiza a un fondo de pensiones? \\ 
+        lugar & Factor & Lugar principal de trabajo \\ 
+        meses & Numérica & ¿Cuántos meses trabajó en los últimos 12 meses? \\ 
+        rama\_4 & Cadena & Rama de actividad CIIU REV 4 (4 dígitos) \\ 
+        rama\_2 & Cadena & Rama de actividad CIIU REV 4 (4 dígitos) \\ 
+        posic & Factor & Posición laboral \\ 
+        fondo & Factor & ¿A cuál fondo cotiza? \\ 
+        cambiar & Factor & ¿Desea cambiar su trabajo? \\ 
+        estable & Factor & ¿Considera que su empleo es estable? \\ 
+        t\_actual & Numérica & ¿Cuánto tiempo lleva en su empleo actual? \\ 
+        t\_viaje & Numérica & Tiempo de desplazamiento al trabajo \\ 
+        mas\_h & Factor & ¿Quiere trabajar más horas? \\ 
+        medio & Factor & Medio de transporte \\ 
+        sintrab & Factor & ¿Si no tuviera trabajo, de dónde obtendría sus recursos? \\ 
+        n\_comp & Factor & ¿Cuántas personas tiene la empresa donde trabajo? \\ 
+        srl & Factor & ¿Afiliación a ARL? \\ 
+        caja & Factor & ¿Afiliación a caja de compensación familiar? \\ 
+        actividad & Factor & Actividad económica recodificada \\ 
+        cotiza\_fondo & Factor & Fondo de pensiones recodificado \\ 
+        factor\_exp & Numérica & Factor de expansión \\ \hline\hline
+  \end{tabular}
+}
+\label{tab:multicol}
+\end{table}
+
+## Datos cualitativos:
+
+
+### Resumen de datos cualitativos
+
+Considérese las siguientes variables cualitativas previamente recodificadas:
+
+::: columns
+::: {.column width="30%"}
+
+\bigskip
+
+- La función `forcats::fct_lump_n()`es usada para agregar las categoría en "otros".
+
+- Las gráficas muestran las 10 categorías más frecuentes.
+
+- La función `ggplot2::facet_wrap` es usada para obtener los gráficos múltiples
+
+:::
+  
+::: {.column width="70%"}
+
+```{r, echo=F, eval = T}
+plot_cat <- readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_cat.rds")
+```
+
+
+```{r, echo=F, eval = T, fig.height=10, out.height="0.8\\textheight", fig.align="center"}
+plot_cat
+```
+:::
+:::
+
+## Resumen de datos cualitativos (cont.):
+
+Idéntica información puede ser representada mediante el siguiente resumen:
+
+```{r, echo=F, eval = T}
+count_prop <- tibble(readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/count_prop.rds"))
+
+count_prop <- count_prop %>% dplyr::filter(!is.na(value))
+count_prop <- count_prop %>% dplyr::filter(name %in% c("actividad",
+                                                       "edu",
+                                                       "cotiza_fondo"))
+  
+count_prop$name <-  revalue(factor(count_prop$name), 
+                                  c("actividad"="Actividad económica", "edu" = "Educación",
+                                    "cotiza_fondo" = "Fondo de pensiones"))  
+#count_prop$value = substr(count_prop$value, 1, 35)
+count_prop$Share = round(count_prop$Share, 2)
+```
+
+\centering
+\resizebox{11cm}{!}{ 
+
+```{r, echo=F, eval = T}
+kable(count_prop[,2:ncol(count_prop)], format = "latex", booktabs = T,
+      col.names = c(" ", "N", "Proporción (%)")) %>% 
+  pack_rows(index = table(count_prop$name))
+```
+
+}
+
+## Resumen de datos cualitativos (cont.):
+
+Un panel de **gráficos circulares** es útil para presentar un resumen sobre las variables categóricas con un número menor de niveles. Considérese las siguientes variables
+
+
+```{r, echo=F, eval = T}
+plot_dic <- readRDS("C:/Users/Portatil/Desktop/Curso_EDA_2024_I/Módulos/Módulo 2/Figuras/plot_dic.rds")
+```
+```{r, echo=F, eval = T, fig.height=5, fig.align="center"}
+plot_dic
+```
+
+
+## Datos cuantitativos
+
+
+::: columns
+::: {.column width="30%"}
+
+\bigskip
+
+####
+
+El **Histograma** es una representación gráfica de los datos que muestra la frecuencia de los casos (valores) en categorías de datos (véase la tabla inferior).
+
+
+:::
+  
+::: {.column width="70%"}
+
+```{r, echo=FALSE, eval = T, warning=F}
 dataset <- readxl::read_excel("geih_dataset.xlsx")
-
-library(car)
-par(mfrow = c(2,3))
-qqPlot(dataset$ingreso/1000, main = "Ingreso laboral (miles $)", ylab  = " ")
-qqPlot(dataset$edad, main = "Edad (años)", ylab = " ")
-qqPlot(dataset$horas_semana, main = "Horas trabajadas (semana)", ylab = " ")
-qqPlot(dataset$t_actual, main = "Tiempo en el trabajo actual", ylab = " ")
-qqPlot(dataset$t_viaje, main = "Tiempo de desplazamiento", ylab = " ")
+ggplot(data = dataset) +
+  geom_histogram(mapping = aes(x = ingreso/1000, col = ingreso),
+                 fill = "lightskyblue", col = "black",
+                 binwidth = 400) + xlim(c(0, 15000))  + theme_bw()
 ```
 
 
-## Normalidad univariada (cont.)
+:::
+:::
+
+```{r, echo=FALSE, eval = T}
+count = dataset %>% dplyr::count(cut_width(ingreso/1000, 1000, boundary = 0, dig.lab = 6),
+                          name = "n") %>% t()
+colnames(count) = count[1,]
+count2 = as.data.frame(count[2,1:8]) %>% t()
 
 
-La intuición del método gráfico es verificada mediante pruebas formales. Usando la librería `nortest`:
+kable(count2, col.names = NA, row.names = F, format = "latex", booktabs = T)
+```
+
+## Histograma
 
 
-```{r, eval = T, echo=F}
-# Analizar la normalidad de las variables continuas
-library(nortest) # Anderson-Darling, Kolmogorov-Smirnov (Lilliefors)
+```{r, echo = F, eval = T, , warning=F, prompt=FALSE, results = FALSE}
+hist_ds <- dataset[c("id", "edad",
+                     "horas_semana", "t_actual",
+                     "t_viaje")]
 
+hist_melt <- melt(hist_ds)
 
-
-############################## Paréntesis: esto es únicamente para la presentación ######################################
-nortest_function <- function(x, y){
-  if (is.function(y)) {
-    w <- x[!is.na(x)]
-    return(y(w)$p.value)
-  } else {return("Y no es una función")}
-}
-
-
-ad <- dataset %>% dplyr::select(ingreso,
-                                    edad, horas_semana,
-                                    t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, ad.test))) %>% t() 
-
-li <- dataset %>% dplyr::select(ingreso,
-                                    edad, horas_semana,
-                                    t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, lillie.test))) %>% t()  
-
-pearson <- dataset %>% dplyr::select(ingreso,
-                                         edad, horas_semana,
-                                         t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, pearson.test))) %>% t() 
-
-
-
-df_summary <- data.frame(variable = rownames(ad),
-                         ad_test = round(ad, 6),
-                         li_test = round(li,6),
-                         pearson_test = round(pearson, 6))
-
+figure_3 <- ggplot(data = hist_melt, aes(x = value,
+                                         fill = variable)) + geom_histogram(bins = 15,
+                                                                            col = "black") + 
+  facet_wrap(~variable, scales = "free",
+             labeller = labeller(variable = c(`edad` = "Edad",
+                                              `horas_semana` = "Horas trabajadas (semana)",
+                                              `t_actual` = "Tiempo (empleo actual)",
+                                              `t_viaje` = "Tiempo de viaje"))) + guides(fill = "none") + theme_bw() +
+  labs(x = " ")
+figure_3
 ```
 
 
-```{r, eval = T, echo=F}
-kable(df_summary, col.names = c("variable",
-                                "Anderson-Darling",
-                                "Lilliefors (Kolmogorov-Smirnov)",
-                                "Pearson chi-square"), row.names = F,
-      format = "latex", booktabs = T)
-```
 
-Se examinan  las siguientes transformaciones
+## PDF y ECDF
+
+La **función de densidad empírica** (PDF) $f(x)$ y la **función de distribución acumulada empírica** (ECDF) $F(x)$ son obtenidas mediante las funciones `density()` y  `ecdf()` del paquete `Stats`.
 
 
 ::: columns
-::: {.column width="30%"}
+::: {.column width="50%"}
 
-
-```{r, echo = F}
-nortest_function <- function(x, y){
-  if (is.function(y)) {
-    w <- x[!is.na(x)]
-    w <- w[w > 0]
-    return(y(log(w))$p.value)
-  } else {return("Y no es una función")}
-}
-
-
-ad <- dataset %>% dplyr::select(ingreso,
-                                    edad, horas_semana,
-                                    t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, ad.test))) %>% t() 
-
-li <- dataset %>% dplyr::select(ingreso,
-                                    edad, horas_semana,
-                                    t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, lillie.test))) %>% t()  
-
-pearson <- dataset %>% dplyr::select(ingreso,
-                                         edad, horas_semana,
-                                         t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, pearson.test))) %>% t() 
-
-
-
-df_summary <- data.frame(variable = rownames(ad),
-                         ad_test = round(ad, 6),
-                         li_test = round(li,6),
-                         pearson_test = round(pearson, 6))
+```{r, echo=FALSE, eval = T}
+ggplot(data = dataset, aes(x = edad)) + 
+  geom_density(color = "black",
+               alpha = 0.2, fill = "gray45") +
+  theme_bw() + labs(x = "Edad", y = "Density",
+                    title = "Edad (años cumplidos)")
 ```
 
-```{r, eval = T, echo=F}
-kable(df_summary, col.names = c("log(x)",
-                                "A-D",
-                                "K-S)",
-                                "P"), row.names = F,
-      format = "latex", booktabs = T)
-```
 
 :::
   
-::: {.column width="30%"}
+::: {.column width="50%"}
 
-```{r, echo = F}
-nortest_function <- function(x, y){
-  if (is.function(y)) {
-    w <- x[!is.na(x)]
-    w <- w[w > 0]
-    return(y(sqrt(w))$p.value)
-  } else {return("Y no es una función")}
-}
-
-
-ad <- dataset %>% dplyr::select(ingreso,
-                                    edad, horas_semana,
-                                    t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, ad.test))) %>% t() 
-
-li <- dataset %>% dplyr::select(ingreso,
-                                    edad, horas_semana,
-                                    t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, lillie.test))) %>% t()  
-
-pearson <- dataset %>% dplyr::select(ingreso,
-                                         edad, horas_semana,
-                                         t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, pearson.test))) %>% t() 
-
-
-
-df_summary <- data.frame(variable = rownames(ad),
-                         ad_test = round(ad, 6),
-                         li_test = round(li,6),
-                         pearson_test = round(pearson, 6))
+```{r, echo=FALSE, eval = T}
+ggplot(data = dataset,
+       aes(x = edad)) + stat_ecdf(geom = "step",
+                                  color = "gray45") +
+  theme_bw() + labs(x = "Edad", y = "ECDF",
+                    title = "Edad (años cumplidos)")
 ```
-
-```{r, eval = T, echo=F}
-kable(df_summary, col.names = c("sqrt(x)",
-                                "A-D",
-                                "K-S)",
-                                "P"), row.names = F,
-      format = "latex", booktabs = T)
-```
-
-
-
-:::
-
-::: {.column width="30%"}
-
-```{r, echo = F}
-nortest_function <- function(x, y){
-  if (is.function(y)) {
-    w <- x[!is.na(x)]
-    w <- w[w > 0]
-    return(y((w^(1/3)))$p.value)
-  } else {return("Y no es una función")}
-}
-
-
-ad <- dataset %>% dplyr::select(ingreso,
-                                    edad, horas_semana,
-                                    t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, ad.test))) %>% t() 
-
-li <- dataset %>% dplyr::select(ingreso,
-                                    edad, horas_semana,
-                                    t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, lillie.test))) %>% t()  
-
-pearson <- dataset %>% dplyr::select(ingreso,
-                                         edad, horas_semana,
-                                         t_actual, t_viaje) %>% 
-  summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   ~ nortest_function(.x, pearson.test))) %>% t() 
-
-
-
-df_summary <- data.frame(variable = rownames(ad),
-                         ad_test = round(ad, 6),
-                         li_test = round(li,6),
-                         pearson_test = round(pearson, 6))
-```
-
-```{r, eval = T, echo=F}
-kable(df_summary, col.names = c("cuberoot(x)",
-                                "A-D",
-                                "K-S)",
-                                "P"), row.names = F,
-      format = "latex", booktabs = T)
-```
-
 
 :::
 :::
 
-## Normalidad univariada (cont.)
+La función de densidad $f(x)$ satisface que $\int_{a}^{b}f(x)dx = P[a \leq X \leq b]$, donde $P[a \leq X \leq b]$ significa la probabilidad de que X se encuentre en el intervalo $a$ a $b$. Por definición, $F(x) = P(X \leq x)$, es decir, expresa la probabilidad de que X no sea mayor que el valor de x.
 
-Considérese el análisis sobre las transformacions del ingreso laboral (miles $). Como se verificó en el **Módulo 2**, la transformación logarítmica reduce la influencia de los valores atípicos. En lo sucesivo, nuestro análisis emplea el **logaritmo del ingreso laboral**.
+## Función de Distribución Acumulada Empírica
 
-```{r, echo=F, eval = T, message=F, warning=F, prompt=FALSE, results = FALSE,fig.width= 6, fig.height=4}
-library(car)
+Un ejercicio análogo es implementado para las variables cuantitativas restantes.
 
-par(mfrow = c(2,2))
-qqPlot(dataset$ingreso, ylab = "Ingreso laboral", main  = "Base")
-qqPlot(log(dataset$ingreso), ylab = "Ingreso laboral", main = "Log transformation ")
-qqPlot((dataset$ingreso)^(1/2), ylab = "Ingreso laboral", main = "Square root transformation ")
-qqPlot((dataset$ingreso)^(1/3), ylab = "Ingreso laboral", main = "Cubic root transformation ")
 
+```{r, echo=FALSE, eval = T, warning=F, fig.height=5, fig.align="center"}
+hist_ds <- dataset[c("id", "edad", "ingreso",
+                     "horas_semana", "t_actual",
+                     "t_viaje")]
+hist_ds$ingreso <- hist_ds$ingreso/1000
+
+hist_melt <- melt(hist_ds)
+
+figure_4 <- ggplot(data = hist_melt, aes(x = value,
+                                         fill = variable)) + stat_ecdf(geom = "step",
+                                                                       color = "gray45") + 
+  facet_wrap(~variable, scales = "free",
+             labeller = labeller(variable = c(`edad` = "Edad",
+                                              `horas_semana` = "Horas trabajadas (semana)",
+                                              `t_actual` = "Tiempo (empleo actual)",
+                                              `t_viaje` = "Tiempo de viaje",
+                                              `ingreso`= "Ingreso laboral"))) + guides(fill = "none") + theme_bw() +
+  labs(x = " ")
+figure_4
 ```
 
-## Resumen descriptivo (mediana e IQR)
 
-Se verificó que las variables continuas no siguen una distribución normal y, en consecuencia, el resumen descriptivo reporta la mediana y el rango intercuartílico.
+## Diagrama de caja
 
-```{r, eval = T, echo=FALSE,message=F, warning=F}
+#### 
+Un **diagrama de caja** es un resumen gráfico de los datos con base en la los cuartiles Q1 y Q3, la mediana y el rango intercuartílico (RIC). El siguiente diagrama muestra su elaboración:
 
-quantile_f <- function(x){
-  q1 <- quantile(x, na.rm = T, 0.25)
-  q2 <- quantile(x, na.rm = T, 0.5)
-  q3 <- quantile(x, na.rm = T, 0.75)
-  y <- paste0(round(as.numeric(q2), 1), " (",
-              round(as.numeric(q1), 2), " - ",
-              round(as.numeric(q3), 2), ")")
-  return(y)
-}
+![Construcción de un diagrama de caja](Figuras/boxplot_completo.png){width=250}
 
-total <- dataset %>% dplyr::select(ingreso,
-                                    edad, horas_semana,
-                                    t_actual, t_viaje) %>% 
-  dplyr::summarise(across(everything(),
-                   ~ quantile_f(.x)))
+## Un resumen de datos cuantitativos usando StatDA()
 
-q_total <- data.frame(area = "Total",
-                      ingreso_sum = total$ingreso,
-                      edad_sum = total$edad,
-                      horas_semana_sum = total$horas_semana,
-                      t_actual_sum = total$t_actual,
-                      t_viaje_sum = total$t_viaje)
+La librería `StatDA()` proporciona una utilidad para representar la distribución y los principales elementos descriptivos de las variables continuas. 
 
-# Resumen descriptivo por grupos
-q_group <- dataset %>%
-  dplyr::group_by(area) %>%
-  dplyr::summarise(across(c("ingreso",
-                     "edad", "horas_semana",
-                     "t_actual", "t_viaje"),
-                   list(sum = quantile_f))) %>% as.data.frame() 
+```{r, echo=T, eval = F}
+library(StatDA)
+library(moments)
 
+me = mean(dataset$edad)
+sd = sd(dataset$edad)
 
-cont_summary <- rbind(q_total, q_group)
-
-kable(cont_summary, format = "latex",
-                  booktabs = T, col.names = c("Área" ,"Ingreso",
-                                              "Edad", "Horas (semana)", "Tiempo actual", "Tiempo de viaje"))
+StatDA::edaplot(dataset$edad, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(0,100, by = 4),H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5, D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(1, 91), P.cex.lab =1.2, P.log=FALSE, P.main="Histograma,
+                función de densidad, gráfico de dispersión y diagrama de caja de la edad",
+                P.xlab="Edad (años)", P.plot=TRUE,
+                P.ylab="Densidad",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(dataset$edad), lwd=2, col='blue')
+curve(dnorm(x, mean=me, sd=sd), from=0, to=100, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(dataset$edad),4)),
+             paste0("Max. = ", round(max(dataset$edad),4)),
+             paste0("Mean = ", round(mean(dataset$edad),4)),
+             paste0("Mediana = ", round(median(dataset$edad),4)),
+             paste0("SD = ", round(sd(dataset$edad),4)),
+             paste0("Kurtosis = ", round(kurtosis(dataset$edad),4)),
+             paste0("Skewness = ", round(skewness(dataset$edad),4)))
+legend (x=-3, y=0.028, bty="n", leg.txt)
 ```
 
-# Introducción al EDA multivariante
+## Resumen de datos cuantitativos (cont.)
 
-## EDA multivariante 
+```{r, echo=FALSE, eval = T, warning=F, message=F}
+library(StatDA)
+library(moments)
 
-El **EDA multivariante** está fundamentado en la exploración, de manera simultánea, de dos o más características (variables) medidas en un conjunto de casos (Kachigan, 1991). El análisis univariante se centra en la variación, mientras que el análisis multivariante se centra en la **covariación** y **correlaciones** que refleja un conjunto de variables.
+me = mean(dataset$edad)
+sd = sd(dataset$edad)
 
-El análisis multivariante no sólo incluye estrategias de análisis exploratorio; sino, además, las siguientes técnicas:
+StatDA::edaplot(dataset$edad, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(0,100, by = 4), H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(1, 91), P.cex.lab =1.2, P.log=FALSE, P.main="Histograma,
+                función de densidad, gráfico de dispersión y diagrama de caja de la edad", P.plot=TRUE,
+                P.ylab="Density",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(dataset$edad), lwd=2, col='blue')
+curve(dnorm(x, mean=me, sd=sd), from=0, to=100, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(dataset$edad),4)), paste0("Max. = ", round(max(dataset$edad),4)),
+             paste0("Mean = ", round(mean(dataset$edad),4)), paste0("Median = ", round(median(dataset$edad),4)),
+             paste0("SD = ", round(sd(dataset$edad),4)), paste0("Kurtosis = ", round(kurtosis(dataset$edad),4)), paste0("Skewness = ", round(skewness(dataset$edad),4)))
+legend (x=-3, y=0.028, bty="n", leg.txt)
+```
 
-- Componentes principales
-- Análisis factorial
-- Regresión múltiple
-- Análisis discriminante múltiple
-- Análisis multivariante de varianza
-- Análisis cluster
-- Análisis de correspondencias
-- etc.
-
+# Análisis exploratorio multivariante
 
 ## Independencia de variables catégoricas
 
@@ -446,13 +513,15 @@ kable(con2, format = "latex",
 ```
 
 
-La conclusión es verificada mediante la implementación de una prueba $\chi^{2}$ de independencia
-
 ::: columns
 ::: {.column width="50%"}
 
-AQUÍ VA LA DESCRIPCIÓN FORMAL DE LA PRUEBA CHI-2 DE INDEPENDENCIA
-  
+La **prueba $\chi^{2}$ de independencia** permite determinar si dos variables asociadas a **una muestra** son independientes o no.
+
+$$
+H_{0}: \text{Las dos var}
+$$
+
 :::
   
 ::: {.column width="50%"}
@@ -475,7 +544,50 @@ mosaicplot(con1, las = 2, shade = T)
 ## Resumen: independencia de variables categóricas
 
 ```{r, echo = F, eval = T}
-mosaicplot(con1, las = 2, shade = T)
+df = data.frame(matrix(NA, nrow = 10, ncol = 10))
+colnames(df) = c("edu","parent",
+                 "sexo", "posic", "estable", "medio",
+                 "cotiza_fondo", "arl", "caja",
+                 "actividad")  
+df$var = c("edu","parent",
+                 "sexo", "posic", "estable", "medio",
+                 "cotiza_fondo", "arl", "caja",
+                 "actividad")  
+
+chi_2 = reshape2::melt(df, id.vars = "var") %>% select(var, variable) %>%
+  rename(V1 = var, V2 = variable) %>% mutate(st = NA,
+                                             df = NA,
+                                             p = NA)
+chi_2$V2 = as.character(chi_2$V2)
+
+# Caso generalizado
+for (k in 1:nrow(chi_2)) {
+  var_1 = chi_2$V1[k]
+  var_2 = chi_2$V2[k]
+  
+  chi_2_aux = dataset[c(var_1, var_2)]
+  colnames(chi_2_aux) = c("var_1", "var_2")
+  chi_2_aux$var_1 = as.factor(chi_2_aux$var_1)
+  chi_2_aux$var_2 = as.factor(chi_2_aux$var_2)
+  
+  chi_2_test_aux = chisq.test(chi_2_aux$var_1, chi_2_aux$var_2,
+                              simulate.p.value = T)
+  
+  n_row = which(chi_2$V1 == var_1 & chi_2$V2 == var_2)
+  
+  chi_2$st[n_row] = round(chi_2_test_aux$statistic,2)
+  chi_2$df[n_row] = chi_2_test_aux$parameter
+  chi_2$p[n_row] = as.numeric(round(chi_2_test_aux$p.value, 3))
+}
+
+chi_2$p[chi_2$p < 0.001] = "<0.001"
+chi_2$value <- chi_2$p
+
+
+x = reshape2::dcast(chi_2[c("V1", "V2", "value")], 
+                    V1 ~ V2)
+
+kableExtra::kable(x, format = "latex", booktabs = T)
 ```
 
 
@@ -517,5 +629,336 @@ f2 <- ggplot(sp, aes(x = sexo, y = perc,
 ggarrange(f1, f2, ncol = 2)
 
 ```
+
+
+# Detección univariante de valores atípicos
+
+
+## Valores atípicos
+
+La perspectiva univariante selecciona como **valores atípicos** u **outliers** aquellas observaciones que caen fuera de los rangos de la distribución. Un valor atípico se puede producir por alguna de las siguientes cuatro causas \textcolor{cyan}{(Aldás y Uriel, 2017)}:
+
+- **Errores en los datos**: errores en la recolección o introducción de los datos.
+
+- **Erorres voluntarios**: errores intencionados en la respuesta del entrevistado.
+
+- **Errores de muestreo**: errores que son el resultado de introducir en la muestra a individuos pertenecientes a una población distinta a la **población objetivo**.
+
+- **Outliers legítimos**: caso de la población objetivo que, por la variabilidad de las muestras, difiere del resto de casos.
+
+
+## Detección univariada de valores atípicos
+
+Considérese las siguientes alternativas para la detección univariante de *outliers*:
+
+#### Criterio intercuartílico
+
+$$
+x^{*} \in [q_{0.25} - 1.5IQR, q_{0.75} + 1.5IQR]
+$$
+
+#### Criterio de valores estandarizados (Hair et al., 2014)
+
+- Para muestras pequeñas ($n < 80$), $x^{*}$ tiene valores estándar de 2.5 o superiores.
+
+- Para muestras mayores ($n \geq 80$), $x^{*}$ tiene valores estándar de 3-4 o superiores.
+
+#### Test de Grubbs
+
+El **Test de Grubbs** supone la normalidad de la distribución \textcolor{cyan}{(Grubbs, 1969; Stefansky, 1971)}. La hipótesis nula (no hay *outliers*) se rechaza si
+
+$$
+G > \frac{n-1}{n}\sqrt{\frac{t^{2}_{(\alpha/2n, n-2)}}{n-2+t^{2}_{(\alpha/2n, n-2)}}}
+$$
+
+donde $G = {max |x_{i} - \bar{x}|}/{\sigma}$
+
+## Criterio intercuartílico
+
+```{r, echo =F, eval = T, results = FALSE}
+# El mismo resultado se puede obtener manualmente
+Q1 <- quantile(dataset$ingreso, .25, na.rm = T)    # Cálculo de q0.25
+Q3 <- quantile(dataset$ingreso, .75, na.rm = T)    # Cálculo de q0.75
+IQR <- IQR(dataset$ingreso, na.rm = T)             # Cálculo del IQR (Q3-Q1)
+
+outliers1 <- dataset %>% filter(ingreso<(Q1 - 1.5*IQR) | ingreso>(Q3 + 1.5*IQR))
+
+# Identificación de los outliers en la gráfica
+plot(dataset$ingreso, type='p',
+     col=ifelse(dataset$ingreso %in% outliers1$ingreso, "red", "black"),
+     pch = ifelse(dataset$ingreso %in% outliers1$ingreso, 17, 1),
+     ylim = c(-5000000, 10000000),
+     ylab  = "Ingreso laboral")
+```
+
+
+## Criterio de valores estandarizados
+
+Considérese la detección de valores atípicos mediante los siguientes valores estandarizados: $x^{*}$ es un valor atípico cuando $z^{*} \geq 2.5$ (**figura A**); y $x^{*}$ es un valor atípico cuando $z^{*} \geq 4$ (**figura B**).
+
+::: columns
+::: {.column width="50%"}
+
+```{r, eval = T, echo=FALSE,message=F, warning=F, prompt=FALSE, results = FALSE}
+f_z <- function(x){
+  z <- (x-mean(x, na.rm = T))/sd(x, na.rm = T)
+  return(z)
+}
+
+# Definición del data frame con la variable estandarizada
+z <- data.frame(id = seq(1, nrow(dataset), by = 1),
+                x = dataset$ingreso,
+                z = f_z(dataset$ingreso))
+
+# Seguimos el criterio según el cual z > 4, en muestras grandes,
+# es considerado un valor atípico
+outliers1 <- z  %>% filter(abs(z) >= 2.5)
+outliers2 <- z  %>% filter(abs(z) >= 4)
+
+plot(dataset$ingreso, type='p',
+     col=ifelse(dataset$ingreso %in% outliers1$x, "red", "black"),
+     pch = ifelse(dataset$ingreso %in% outliers1$x, 17, 1))
+abline(h = min(outliers1$x), col="blue", lwd=3, lty=2)
+
+```
+
+
+:::
+  
+::: {.column width="50%"}
+
+```{r, eval = T, echo=FALSE,message=F, warning=F, prompt=FALSE, results = FALSE}
+plot(dataset$ingreso, type='p',
+     col=ifelse(dataset$ingreso %in% outliers2$x, "red", "black"),
+     pch = ifelse(dataset$ingreso %in% outliers2$x, 17, 1))
+abline(h = min(outliers2$x), col="blue", lwd=3, lty=2)
+```
+
+
+:::
+:::
+
+
+## Resumen de la variable continua con y sin outliers
+
+
+
+```{r, eval = T, echo=FALSE,message=F, warning=F, prompt=FALSE, results = FALSE}
+# Regresemos al caso de los ingresos
+# Considérese el criterio de Hair et al. (2019)
+
+# Definición del data frame con la variable estandarizada
+z <- data.frame(x = dataset$ingreso,
+                z = f_z(dataset$ingreso))
+
+# Seguimos el criterio según el cual z > 4, en muestras grandes,
+# es considerado un valor atípico
+outliers2 <- z  %>% filter(abs(z) > 4)
+
+# Eliminar valores NA
+# El tratamiento de los valores NA y su estudio
+# corresponden al tercer módulo del curso
+dataset <- dataset %>% filter(!is.na(ingreso))
+
+# Creación de base de datos sin outliers
+dataset_no <- dataset %>% filter(!ingreso %in% outliers2$x)
+
+# Comparación entre ambas distribuciones
+
+
+par(mfrow = c(1,2))
+StatDA::edaplot(dataset$ingreso/1000, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(0,90000, by = 400),
+                H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,
+                D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(1, 20000), P.cex.lab =1.2,
+                P.log=FALSE, P.main="Resumen con outliers",
+                P.xlab="Ingreso laboral (miles $)", P.plot=TRUE,
+                P.ylab="Densidad",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(dataset$ingreso/1000), lwd=2, col='blue')
+curve(dnorm(x, mean=mean(dataset$ingreso/1000, na.rm = T),
+            sd=sd(dataset$ingreso/1000, na.rm = T)), from=0, to=90000, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(dataset$ingreso/1000),4)),
+             paste0("Max. = ", round(max(dataset$ingreso/1000),4)),
+             paste0("Mean = ", round(mean(dataset$ingreso/1000),4)),
+             paste0("Median = ", round(median(dataset$ingreso/1000),4)),
+             paste0("Std. dev. = ", round(sd(dataset$ingreso/1000),4)),
+             paste0("Kurtosis = ", round(kurtosis(dataset$ingreso/1000),4)),
+             paste0("Skewness = ", round(skewness(dataset$ingreso/1000),4)))
+legend (x= 8000, y=0.0008, bty="n", leg.txt)
+
+StatDA::edaplot(dataset_no$ingreso/1000, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(0,90000, by = 400),
+                H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,
+                D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(1, 20000), P.cex.lab =1.2,
+                P.log=FALSE, P.main="Resumen sin outliers",
+                P.xlab="Ingreso laboral (miles $)", P.plot=TRUE,
+                P.ylab="Density",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(dataset_no$ingreso/1000), lwd=2, col='blue')
+curve(dnorm(x, mean=mean(dataset_no$ingreso/1000, na.rm = T),
+            sd=sd(dataset_no$ingreso/1000, na.rm = T)), from=0, to=90000, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(dataset_no$ingreso/1000),4)),
+             paste0("Max. = ", round(max(dataset_no$ingreso/1000),4)),
+             paste0("Mean = ", round(mean(dataset_no$ingreso/1000),4)),
+             paste0("Median = ", round(median(dataset_no$ingreso/1000),4)),
+             paste0("Std. dev. = ", round(sd(dataset_no$ingreso/1000),4)),
+             paste0("Kurtosis = ", round(kurtosis(dataset_no$ingreso/1000),4)),
+             paste0("Skewness = ", round(skewness(dataset_no$ingreso/1000),4)))
+legend (x=8000, y=0.0008, bty="n", leg.txt)
+
+```
+
+
+
+
+
+## Alternativas
+
+Algunas alternativas para el tratamiento de valores atípicos son las siguientes:
+
+1. Eliminación de los valores atípicos para garantizar estimaciones correctas sobre la mayoría de la población \textcolor{cyan}{(Judd et al., 2009)}.
+
+2. Suavizar la influencia de los valores atípicos mediante el uso de transformaciones (raíces o logaritmos) para reducir su rango \textcolor{cyan}{(Hamilton, 1992)}.
+
+3. Análisis estadístico **robusto**.
+
+#### Desventajas
+
+- Perdida de información
+
+- No todas las transformaciones conservan el sentido teórico de la escala original.
+
+
+## Transformaciones para reducir su rango
+
+En lo sucesivo, consideramos el efecto de una transformación logarítmica. Nótese que la transformación logra **reducir el rango** y suavizar, en consecuencia, la influencia de los valores atípicos. (La línea azul indica el umbral a partir del cual un valor es considerado atípico según el **criterio de valores estandarizados**).
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center', fig.height=5}
+
+# Una práctica común sugiere que, cuando la interpretación de la variable
+# no está enteramente sujeta a la escala, una transformación puede
+# funcionar para suavizar la influencia de outliers
+
+# Outliers para log(x)
+z <- data.frame(x = log(dataset$ingreso),
+                z = f_z(log(dataset$ingreso)))
+
+# Seguimos el criterio según el cual z > 4, en muestras grandes,
+# es considerado un valor atípico
+outliers3 <- z  %>% filter(abs(z) > 3)
+
+plot(log(dataset$ingreso), type='p',
+     col=ifelse(log(dataset$ingreso) %in% outliers3$x, "red", "black"),
+     pch = ifelse(log(dataset$ingreso) %in% outliers3$x, 17, 1))
+abline(h = min(outliers3$x), col="blue", lwd=3, lty=2)
+
+```
+
+
+## Transformaciones
+
+
+```{r, echo=FALSE, warning=FALSE}
+
+# Considérese la transformación logarítmica
+dataset$log_ingreso <- log(dataset$ingreso)
+
+dataset_no <- dataset %>% filter(!log_ingreso %in% outliers3$x)
+
+# Comparación entre ambas distribuciones
+par(mfrow = c(1,2))
+StatDA::edaplot(dataset$log_ingreso, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(12,20, by = 0.1),
+                H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,
+                D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(12, 20), P.cex.lab =1.2,
+                P.log=FALSE, P.main="Resumen con outliers",
+                P.xlab="Log Ingreso laboral", P.plot=TRUE,
+                P.ylab="Density",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(dataset$log_ingreso), lwd=2, col='blue')
+curve(dnorm(x, mean=mean(dataset$log_ingreso, na.rm = T),
+            sd=sd(dataset$log_ingreso, na.rm = T)), from=12, to=20, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(dataset$log_ingreso),4)),
+             paste0("Max. = ", round(max(dataset$log_ingreso),4)),
+             paste0("Mean = ", round(mean(dataset$log_ingreso),4)),
+             paste0("Median = ", round(median(dataset$log_ingreso),4)),
+             paste0("Std. dev. = ", round(sd(dataset$log_ingreso),4)),
+             paste0("Kurtosis = ", round(kurtosis(dataset$log_ingreso),4)),
+             paste0("Skewness = ", round(skewness(dataset$log_ingreso),4)))
+legend (x= 15, y=2, bty="n", leg.txt)
+
+StatDA::edaplot(dataset_no$log_ingreso, scatter=TRUE, H.freq=FALSE, box=TRUE, 
+                H.breaks=seq(12,18, by = 0.1),
+                H.col="lightgray", H.border=TRUE, H.labels=FALSE,
+                S.pch=1, S.col="blue", S.cex=0.5,
+                D.lwd=2, D.lty=1, D.plot=FALSE,
+                P.xlim=c(12, 18), P.cex.lab =1.2,
+                P.log=FALSE, P.main="Resumen sin outliers",
+                P.xlab="Log Ingreso laboral", P.plot=TRUE,
+                P.ylab="Density",
+                B.pch=1,B.cex=0.5, B.col="red")
+lines(density(dataset_no$log_ingreso), lwd=2, col='blue')
+curve(dnorm(x, mean=mean(dataset_no$log_ingreso, na.rm = T),
+            sd=sd(dataset_no$log_ingreso, na.rm = T)), from=12, to=18, add=T,
+      col='red', lwd=3)
+leg.txt <- c(paste0("Min. = ", round(min(dataset_no$log_ingreso),4)),
+             paste0("Max. = ", round(max(dataset_no$log_ingreso),4)),
+             paste0("Mean = ", round(mean(dataset_no$log_ingreso),4)),
+             paste0("Median = ", round(median(dataset_no$log_ingreso),4)),
+             paste0("Std. dev. = ", round(sd(dataset_no$log_ingreso),4)),
+             paste0("Kurtosis = ", round(kurtosis(dataset_no$log_ingreso),4)),
+             paste0("Skewness = ", round(skewness(dataset_no$log_ingreso),4)))
+legend (x= 15, y=2, bty="n", leg.txt)
+
+```
+
+# Recursos alternativos
+
+
+- La librería `swirl` proporciona un tutorial sobre elementos básicos en R
+
+```{r, echo=TRUE, eval=FALSE}
+install.packages(“swirl”)
+library (swirl)
+swirl()
+```
+
+
+
+- Data wrangling with dplyr and tidyr (Cheat Sheet): [\textcolor{cyan}{Recurso 1.2}](https://github.com/sergiobarona03/Curso_EDA_2024_I/blob/main/Recursos%20alternativos/M%C3%B3dulo%201/Recurso12.pdf)
+
+- Visualización de datos usando ggplot2 (Guía Rápida): [\textcolor{cyan}{Recurso 1.3}](https://github.com/sergiobarona03/Curso_EDA_2024_I/blob/main/Recursos%20alternativos/M%C3%B3dulo%201/Recurso13.pdf)
+
+- Factors with forcats (Cheat Sheet): [\textcolor{cyan}{Recurso 1.4}](https://github.com/sergiobarona03/Curso_EDA_2024_I/blob/main/Recursos%20alternativos/M%C3%B3dulo%201/Recurso14.pdf)
+  
+
+  
+# Bibliografía de consulta
+  
+\begin{itemize}
+  
+\item{Wickham, H. (2016) GGplot2. Elegant Graphics for Data Analysis. Springer}
+  
+\item{Grolemund, G. (2014). Hands-On Programming with R. O’Reilly Media: Sebastopol, CA.}
+
+\item{Schutt, R. \& O’Neil, C. (2014). Doing Data Science. O’Reilly Media: Sebastopol, CA.}
+  
+\item{Wickham \& Grolemund, G. (2016). R for Data Science: Import, Tidy, Transform, Visualize, and Model Data. O’Reilly Media: Sebastopol, CA.}
+
+\item{Aldás J. \& Uriel, E. (2017). Análisis multivariante aplicado con R. Madrid: Ediciones Paraninfo}
+  
+\end{itemize}
+
+
 
 
